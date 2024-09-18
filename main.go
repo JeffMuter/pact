@@ -1,7 +1,0 @@
-package pact
-
-import "fmt"
-
-func main() {
-	fmt.Println("hello world")
-}
