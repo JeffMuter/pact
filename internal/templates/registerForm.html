@@ -1,0 +1,21 @@
+
+{{ define "registerForm" }}
+<section id="form-container">
+  <h1>{{ .Heading }}</h1>
+
+    <div id="registration-form">
+        <form hx-post="/register" hx-target="#registration-form" hx-swap="outerHTML">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <br><br>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <br><br>
+
+            <button type="submit">Register</button>
+        </form>
+	<a hx-get="/login" hx-target="#form-container" hx-swap="outerHTML">Already have an account? Login Here...</a>
+    </div>
+</section>
+{{ end }}
