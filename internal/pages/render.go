@@ -30,10 +30,7 @@ func InitTemplates() {
 
 // RenderTemplate renders an HTML template and injects the provided data.
 func RenderTemplate(w http.ResponseWriter, templName string, data TemplateData) {
-	fmt.Println("made it in render.templname: " + templName)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8") // necessary or else the template will load as plain text
-
-	fmt.Println(templates.Templates())
 
 	err := templates.ExecuteTemplate(w, templName, data)
 	if err != nil {

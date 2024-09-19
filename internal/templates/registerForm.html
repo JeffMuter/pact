@@ -1,5 +1,5 @@
 
-{{ define "" }}
+{{ define "content" }}
 <section id="form-container">
   <h1>{{ .Data.Heading }}</h1>
 
@@ -15,7 +15,7 @@
 
             <button type="submit">Register</button>
         </form>
-	<a hx-get="/login" hx-target="#form-container" hx-swap="outerHTML">Already have an account? Login Here...</a>
+    <a hx-get="/login" hx-target="#form-container" hx-swap="innerHTML" href="#">Already have an account? Login here...</a>
     </div>
 </section>
 {{ end }}
