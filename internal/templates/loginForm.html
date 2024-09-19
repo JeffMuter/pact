@@ -1,6 +1,6 @@
-{{ define "loginForm" }}
+{{ define "content" }}
 <section id="form-container">
-    <h2>{{ .Heading }}</h2>
+    <h2>{{ .Data.Heading }}</h2>
         <form hx-post="/login">
             <label for="username">Username or Email</label>
             <input type="text" id="username" name="username" required placeholder="Enter your username/email">
@@ -10,6 +10,7 @@
 
             <button type="submit">Login</button>
         </form>
-	<a hx-get="/registeruser" hx-target="#form-container" hx-swap="outerHTML">Not a user? Register Here...</a>
+    <a hx-get="/registeruser" hx-target="#form-container" hx-swap="outerHTML" href="#">Not a user? Register Here...</a>
 </section>
 {{ end }}
+{{ template "layout". }}

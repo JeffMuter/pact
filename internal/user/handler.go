@@ -11,9 +11,8 @@ import (
 func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	// Create TemplateData
 	data := pages.TemplateData{
-		Page: pages.Page{
-			Title:   "User Registration",
-			Heading: "Register for an Account",
+		Data: map[string]string{
+			"Title": "Registration",
 		},
 	}
 

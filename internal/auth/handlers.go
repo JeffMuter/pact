@@ -87,13 +87,19 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
-	pageData := pages.Page{Title: "Login"}
-	data := pages.TemplateData{Page: pageData, FormAction: "/login"}
-	pages.RenderTemplate(w, "loginForm", data)
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Heading": "Login Page",
+			"Title":   "Login",
+		}}
+	pages.RenderTemplate(w, "loginForm.html", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
-	pageData := pages.Page{Title: "Register", Heading: "Register"}
-	data := pages.TemplateData{Page: pageData, FormAction: "/registeruser"}
-	pages.RenderTemplate(w, "../templates/loginForm.html", data)
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Heading": "Registration Page",
+			"Title":   "Register",
+		}}
+	pages.RenderTemplate(w, "registerForm.html", data)
 }
