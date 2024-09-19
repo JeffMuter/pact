@@ -1,19 +1,19 @@
-package handlers
+package auth
 
 import (
-	"database/sql"
-	"fmt"
 	"net/http"
+	"pact/internal/db"
+	"pact/internal/render"
+	"pact/internal/user"
 
 	"golang.org/x/crypto/bcrypt"
-
-	"template-server/internal/database"
-	"template-server/models"
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
-	var user models.User
+	db := db.GetDB()
+
+	var user user.User
 
 	err := r.ParseForm()
 	if err != nil {
@@ -37,10 +37,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Password = string(hashedPassword)
 
-	// open db connection
-	db := database.DatabaseOpen()
-	defer db.Close()
-
 	// create sql statement
 	query, err := db.Prepare("INSERT INTO users (email, password) VALUES ($1, $2)")
 	if err != nil {
@@ -56,7 +52,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// response successful
 
-	err = models.SetSession(user.Email, w)
+	err = auth.SetSession(user.Email, w)
 	if err != nil {
 		http.Error(w, "Failed to set session", http.StatusBadRequest)
 		return
@@ -66,7 +62,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
-	var user models.User
+	var user user.User
 
 	err := r.ParseForm()
 	if err != nil {
@@ -82,7 +78,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	if isValidated {
-		err := models.SetSession(user.Email, w)
+		err := auth.SetSession(user.Email, w)
 		if err != nil {
 			http.Error(w, "Failed to set session", http.StatusBadRequest)
 			return
@@ -94,26 +90,14 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func validateUsernamePassword(email string, password string) (bool, error) {
-	// open db connection
-	db := database.DatabaseOpen()
-	defer db.Close()
+func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
+	pageData := models.Page{Title: "Login", Heading: "Login"}
+	data := models.TemplateData{Page: pageData, FormAction: "/login"}
+	render.RenderTemplate(w, "../../templates/login.html", data)
+}
 
-	var hashedPassword string
-	query := "SELECT password FROM users WHERE email = $1"
-	err := db.QueryRow(query, email).Scan(&hashedPassword)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, err
-		}
-		return false, err
-	}
-
-	// compare provided password to the password from the db
-	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	if err != nil {
-		return false, fmt.Errorf("invalid password")
-	}
-
-	return true, nil
+func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
+	pageData := models.Page{Title: "Register", Heading: "Register"}
+	data := models.TemplateData{Page: pageData, FormAction: "/registeruser"}
+	render.RenderTemplate(w, "../../templates/login.html", data)
 }
