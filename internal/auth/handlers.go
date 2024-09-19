@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 	"pact/internal/db"
-	"pact/internal/render"
+	"pact/internal/pages"
 	"pact/internal/user"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +23,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	user.Email = r.FormValue("email")
 	user.Password = r.FormValue("password")
-
 	if user.Email == "" || user.Password == "" {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)
 		return
@@ -52,7 +51,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// response successful
 
-	err = auth.SetSession(user.Email, w)
+	err = SetSession(user.Email, w)
 	if err != nil {
 		http.Error(w, "Failed to set session", http.StatusBadRequest)
 		return
@@ -78,7 +77,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	if isValidated {
-		err := auth.SetSession(user.Email, w)
+		err := SetSession(user.Email, w)
 		if err != nil {
 			http.Error(w, "Failed to set session", http.StatusBadRequest)
 			return
@@ -91,13 +90,13 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
-	pageData := models.Page{Title: "Login", Heading: "Login"}
-	data := models.TemplateData{Page: pageData, FormAction: "/login"}
-	render.RenderTemplate(w, "../../templates/login.html", data)
+	pageData := pages.Page{Title: "Login", Heading: "Login"}
+	data := pages.TemplateData{Page: pageData, FormAction: "/login"}
+	pages.RenderTemplate(w, "../../templates/login.html", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
-	pageData := models.Page{Title: "Register", Heading: "Register"}
-	data := models.TemplateData{Page: pageData, FormAction: "/registeruser"}
-	render.RenderTemplate(w, "../../templates/login.html", data)
+	pageData := pages.Page{Title: "Register", Heading: "Register"}
+	data := pages.TemplateData{Page: pageData, FormAction: "/registeruser"}
+	pages.RenderTemplate(w, "../../templates/login.html", data)
 }

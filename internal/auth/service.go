@@ -11,7 +11,6 @@ import (
 func validateUsernamePassword(email string, password string) (bool, error) {
 	// open db connection
 	db := db.GetDB()
-	defer db.Close()
 
 	var hashedPassword string
 	query := "SELECT password FROM users WHERE email = $1"

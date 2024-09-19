@@ -12,3 +12,8 @@ type User struct {
 	Updated_at  time.Time
 	Connections map[int]*User // userId as the key, *User as the value
 }
+
+// makeUser creates a blank pointer to an uninitialized user.
+func makeUser() *User {
+	return &User{}
+}
