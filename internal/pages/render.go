@@ -8,6 +8,8 @@ import (
 
 var templates *template.Template
 
+// InitTemplates() parses all templates to a single global template, but all the definitions, layouts, and blocks are all accessible. Allowing us to initialize them
+// on app run, but not have to initialize a new set of templates for every request.
 func InitTemplates() {
 	var err error
 	// Parse all templates in the templates directory with a `.html` extension
