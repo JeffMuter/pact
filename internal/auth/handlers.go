@@ -71,22 +71,19 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	formEmail := r.FormValue("email")
 	formPassword := r.FormValue("password")
 
-	isValidated, err := validateUsernamePassword(formEmail, formPassword)
+	err = validateUsernamePassword(formEmail, formPassword)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	if isValidated {
-		err := SetSession(formEmail, w)
-		if err != nil {
-			http.Error(w, "Failed to set session", http.StatusBadRequest)
-			// should log this
-			return
-		}
-
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	} else {
-		http.Error(w, "Username or password incorrect... Try again.", http.StatusBadRequest)
+	err = SetSession(formEmail, w)
+	if err != nil {
+		http.Error(w, "Failed to set session", http.StatusBadRequest)
+		// should log this
+		return
 	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Error(w, "Username or password incorrect... Try again.", http.StatusBadRequest)
 }
 
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
