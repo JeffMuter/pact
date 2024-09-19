@@ -7,10 +7,6 @@ import (
 	"pact/internal/pages"
 )
 
-func makeUser() *User {
-	return &User{}
-}
-
 // ShowRegistrationForm renders the user registration form.
 func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	// Create TemplateData

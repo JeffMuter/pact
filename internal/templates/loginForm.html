@@ -1,0 +1,14 @@
+{{ define "loginForm" }}
+<section>
+        <h2>Login</h2>
+        <form hx-post="/login">
+            <label for="username">Username or Email</label>
+            <input type="text" id="username" name="username" required placeholder="Enter your username/email">
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
+
+            <button type="submit">Login</button>
+        </form>
+</section>
+{{ end }}

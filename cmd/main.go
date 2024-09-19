@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 	"pact/internal/db"
+	"pact/internal/pages"
 	"pact/internal/router"
 )
 
 func main() {
+	pages.InitTemplates()
 	err := db.OpenDatabase()
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)

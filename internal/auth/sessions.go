@@ -40,13 +40,12 @@ func SetSession(email string, w http.ResponseWriter) error {
 	db := db.GetDB()
 
 	var session Session
-	var user user.User
 
-	user, err = user.GetUserByEmail(email)
+	user, err := user.GetUserByEmail(email)
 	if err != nil {
 		fmt.Println("get user failed in setSession()")
 	}
-	session.UserId = user.Id
+	session.UserId = user.UserId
 	session.SessionToken = sessionToken
 	session.Created, session.Expires = time.Now(), time.Now().Add(time.Hour*24)
 
@@ -73,8 +72,7 @@ func addSession(db *sql.DB, session Session) error {
 
 func ValidateSession(r *http.Request) (string, error) {
 	var session Session
-	db := database.DatabaseOpen()
-	defer db.Close()
+	db := db.GetDB()
 
 	cookie, err := r.Cookie("session_token")
 	if err != nil {

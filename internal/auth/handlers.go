@@ -61,7 +61,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
-	var user user.User
 
 	err := r.ParseForm()
 	if err != nil {
@@ -69,17 +68,18 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Email = r.FormValue("email")
-	user.Password = r.FormValue("password")
+	formEmail := r.FormValue("email")
+	formPassword := r.FormValue("password")
 
-	isValidated, err := validateUsernamePassword(user.Email, user.Password)
+	isValidated, err := validateUsernamePassword(formEmail, formPassword)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	if isValidated {
-		err := SetSession(user.Email, w)
+		err := SetSession(formEmail, w)
 		if err != nil {
 			http.Error(w, "Failed to set session", http.StatusBadRequest)
+			// should log this
 			return
 		}
 
@@ -90,13 +90,13 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
-	pageData := pages.Page{Title: "Login", Heading: "Login"}
+	pageData := pages.Page{Title: "Login"}
 	data := pages.TemplateData{Page: pageData, FormAction: "/login"}
-	pages.RenderTemplate(w, "../../templates/login.html", data)
+	pages.RenderTemplate(w, "loginForm", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
 	pageData := pages.Page{Title: "Register", Heading: "Register"}
 	data := pages.TemplateData{Page: pageData, FormAction: "/registeruser"}
-	pages.RenderTemplate(w, "../../templates/login.html", data)
+	pages.RenderTemplate(w, "../templates/loginForm.html", data)
 }
