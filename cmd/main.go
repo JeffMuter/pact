@@ -20,5 +20,4 @@ func main() {
 	if err != nil {
 		fmt.Printf("error with listen&serve: %v", err)
 	}
-	fmt.Println("listening on port 8080...")
 }
