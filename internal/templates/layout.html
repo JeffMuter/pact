@@ -1,18 +1,23 @@
 {{ define "layout" }}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Data.Title }}</title>
-    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-  </head>
-  <body>
-    {{ template "navbar" . }}
-    <main>
-      {{block "content" . }}{{ end }}
-    </main>
-    {{ template "footer" . }}
-  </body>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./index.css" rel="stylesheet" />
+  <title>{{ .Data.Title }}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</head>
+
+<body class="bg-black text-white">
+  <h1>sumthin</h1>
+  {{ template "navbar" . }}
+  <main>
+    {{block "content" . }}{{ end }}
+  </main>
+  {{ template "footer" . }}
+</body>
+
 </html>
 {{ end }}

@@ -89,7 +89,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := pages.TemplateData{
 		Data: map[string]string{
-			"Heading": "Login Page",
+			"Heading": "Login",
 			"Title":   "Login",
 		}}
 	pages.RenderTemplate(w, "loginForm.html", data)

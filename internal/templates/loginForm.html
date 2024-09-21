@@ -1,5 +1,5 @@
 {{ define "content" }}
-<section id="form-container" class="flex w-6">
+<section id="form-container" class="flex">
     <h2>Login</h2>
     <form hx-post="/login">
         <label for="username">Username or Email</label>
@@ -16,8 +16,3 @@
 {{ end }}
 
 {{ template "layout" . }}
-<style>
-    .classname {
-        display: none;
-    }
-</style>
