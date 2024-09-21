@@ -1,17 +1,23 @@
 {{ define "content" }}
-<section id="form-container">
+<section i="form-container">
     <h2>{{ .Data.Heading }}</h2>
-        <form hx-post="/login">
-            <label for="username">Username or Email</label>
-            <input type="text" id="username" name="username" required placeholder="Enter your username/email">
+    <form hx-post="/login">
+        <label for="username">Username or Email</label>
+        <input type="text" id="username" name="username" required placeholder="Enter your username/email">
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="off">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password"
+            autocomplete="off">
 
-            <button type="submit">Login</button>
-        </form>
+        <button type="submit">Login</button>
+    </form>
     <a hx-get="/registeruser" hx-target="#form-container" hx-swap="innerHTML" href="#">Not a user? Register Here...</a>
 </section>
 {{ end }}
 
 {{ template "layout" . }}
+<style>
+    .classname {
+        display: none;
+    }
+</style>
