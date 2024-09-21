@@ -1,6 +1,6 @@
 {{ define "content" }}
-<section i="form-container">
-    <h2>{{ .Data.Heading }}</h2>
+<section id="form-container" class="flex w-6">
+    <h2>Login</h2>
     <form hx-post="/login">
         <label for="username">Username or Email</label>
         <input type="text" id="username" name="username" required placeholder="Enter your username/email">
