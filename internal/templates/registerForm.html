@@ -1,6 +1,8 @@
-{{ define "content" }}
+{{ define "registerForm" }}
+{{ temaplte "header" . }}
+{{ temaplte "navbar" . }}
 <section id="form-container">
-  <h1>{{ .Data.Heading }}</h1>
+  <h1>Register</h1>
   <div id="registration-form">
     <form hx-post="/register" hx-target="#registration-form" hx-swap="outerHTML">
       <label for="username">Username:</label>
@@ -17,6 +19,5 @@
       here...</a>
   </div>
 </section>
-<section>
-
-  {{ end }}
+{{ template "footer" . }}
+{{ end }}

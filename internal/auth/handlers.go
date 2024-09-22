@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"pact/internal/db"
 	"pact/internal/pages"
@@ -89,17 +90,22 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := pages.TemplateData{
 		Data: map[string]string{
+			"Content": "loginForm",
 			"Heading": "Login",
 			"Title":   "Login",
 		}}
-	pages.RenderTemplate(w, "loginForm.html", data)
+	fmt.Println("login handler ran")
+	pages.RenderTemplate(w, "defaultLayout.html", "loginForm.html" data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
 	data := pages.TemplateData{
 		Data: map[string]string{
+			"Content": "registerForm",
 			"Heading": "Registration Page",
 			"Title":   "Register",
 		}}
-	pages.RenderTemplate(w, "registerForm.html", data)
+
+	fmt.Println("register handler ran")
+	pages.RenderTemplate(w, "defaultLayout.html", data)
 }

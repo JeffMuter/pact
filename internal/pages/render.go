@@ -1,39 +1,33 @@
 package pages
 
 import (
-	"fmt"
-	"html/template"
 	"log"
 	"net/http"
-	"os"
+	"path/filepath"
+	"text/template"
 )
 
-var templates *template.Template
-
-// InitTemplates() parses all templates to a single global template, but all the definitions, layouts, and blocks are all accessible. Allowing us to initialize them
-// on app run, but not have to initialize a new set of templates for every request.
-func InitTemplates() {
-	var err error
-
-	// Print the current working directory for debugging
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error getting current working directory: %v", err)
-	}
-	log.Printf("Current working directory: %s", dir)
-
-	templates, err = template.ParseGlob("./internal/templates/*.html")
-	if err != nil {
-		fmt.Printf("Error parsing templates: %v", err)
-	}
-}
-
 // RenderTemplate renders an HTML template and injects the provided data.
-func RenderTemplate(w http.ResponseWriter, templName string, data TemplateData) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8") // necessary or else the template will load as plain text
-
-	err := templates.ExecuteTemplate(w, templName, data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func RenderTemplate(w http.ResponseWriter, layoutTempl string, contentTempl string, data TemplateData) error {
+	// Parse the layout and block templates
+	files := []string{
+		filepath.Join("templates", layoutTempl),  // e.g., "base.html"
+		filepath.Join("templates", contentTempl), // e.g., "home.html"
 	}
+
+	templ, err := template.ParseFiles(files...)
+	if err != nil {
+		return err
+	}
+
+	//	w.Header().Set("Content-Type", "text/html; charset=utf-8") // necessary or else the template will load as plain text
+
+	// Always render the layout.html as the base template
+	err = templ.ExecuteTemplate(w, "defaultLayout", data)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error rendering layout: %v", err)
+		return err
+	}
+	return nil
 }
