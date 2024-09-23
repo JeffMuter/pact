@@ -17,7 +17,7 @@ func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render the template
-	pages.RenderTemplate(w, "internal/templates/user/registration.html", data)
+	pages.RenderTemplate(w, "defaultLayout.html", "registerForm.html", data)
 }
 
 func GetUserByEmail(email string) (*User, error) {

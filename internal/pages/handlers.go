@@ -11,5 +11,5 @@ func ServeHomePage(w http.ResponseWriter, r *http.Request) {
 			"Title": "Home",
 		}}
 
-	RenderTemplate(w, "./templates/index.html", data)
+	TemplateRenderer(w, "defaultLayout", "index.html", data)
 }

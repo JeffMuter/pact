@@ -1,4 +1,4 @@
-{{ define "header" }}
+{{ define "defaultLayout" }}
 <!DOCTYPE html>
 
 <head>
@@ -8,4 +8,16 @@
   <title>{{ .Data.Title }}</title>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 </head>
+
+{{ template "navbar" . }}
+
+<body>
+  <main>
+    {{ block "content" . }}{{ end }}
+  </main>
+</body>
+
+{{ template "footer" . }}
+
+</html>
 {{ end }}

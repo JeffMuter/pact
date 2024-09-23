@@ -90,22 +90,20 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := pages.TemplateData{
 		Data: map[string]string{
-			"Content": "loginForm",
 			"Heading": "Login",
 			"Title":   "Login",
 		}}
 	fmt.Println("login handler ran")
-	pages.RenderTemplate(w, "defaultLayout.html", "loginForm.html" data)
+	pages.RenderTemplate(w, "defaultLayout.html", "loginForm.html", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
 	data := pages.TemplateData{
 		Data: map[string]string{
-			"Content": "registerForm",
 			"Heading": "Registration Page",
 			"Title":   "Register",
 		}}
 
 	fmt.Println("register handler ran")
-	pages.RenderTemplate(w, "defaultLayout.html", data)
+	pages.RenderTemplate(w, "defaultLayout.html", "registerForm.html", data)
 }

@@ -1,6 +1,4 @@
-{{ define "loginPage" }}
-{{ template "header" . }}
-{{ template "navbar" . }}
+{{ define "content" }}
 <section id="form-container" class="flex">
     <h2>Login</h2>
     <form hx-post="/login">
@@ -15,5 +13,4 @@
     </form>
     <a hx-get="/registeruser" hx-target="#form-container" hx-swap="innerHTML" href="#">Not a user? Register Here...</a>
 </section>
-{{ template "footer" . }}
 {{ end }}

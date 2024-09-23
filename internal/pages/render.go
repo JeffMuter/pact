@@ -1,33 +1,64 @@
 package pages
 
 import (
-	"log"
+	"fmt"
+	"io/fs"
 	"net/http"
 	"path/filepath"
 	"text/template"
 )
 
-// RenderTemplate renders an HTML template and injects the provided data.
-func RenderTemplate(w http.ResponseWriter, layoutTempl string, contentTempl string, data TemplateData) error {
-	// Parse the layout and block templates
-	files := []string{
-		filepath.Join("templates", layoutTempl),  // e.g., "base.html"
-		filepath.Join("templates", contentTempl), // e.g., "home.html"
+type TemplateRenderer struct {
+	templates   map[string]*template.Template
+	templateDir string
+	baseLayout  string
+	partials    []string
+}
+
+func NewTemplateRenderer(templateDir, baseLayout string, partials ...string) *TemplateRenderer {
+	return &TemplateRenderer{
+		templates:   make(map[string]*template.Template),
+		templateDir: templateDir,
+		baseLayout:  baseLayout,
+		partials:    partials,
+	}
+}
+
+func (tr *TemplateRenderer) LoadTemplates() error {
+	return filepath.Walk(tr.templateDir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || filepath.Ext(path) != ".html" {
+			return nil
+		}
+
+		templateName := filepath.Base(path)
+		if templateName == tr.baseLayout {
+			return nil
+		}
+
+		files := append([]string{filepath.Join(tr.templateDir, tr.baseLayout)}, path)
+		for _, partial := range tr.partials {
+			files = append(files, filepath.Join(tr.templateDir, partial))
+		}
+
+		tmpl, err := template.ParseFiles(files...)
+		if err != nil {
+			return fmt.Errorf("error parsing template %s: %v", templateName, err)
+		}
+
+		tr.templates[templateName] = tmpl
+		return nil
+	})
+}
+
+func (tr *TemplateRenderer) RenderTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
+	tmpl, ok := tr.templates[templateName]
+	if !ok {
+		return fmt.Errorf("template %s not found", templateName)
 	}
 
-	templ, err := template.ParseFiles(files...)
-	if err != nil {
-		return err
-	}
-
-	//	w.Header().Set("Content-Type", "text/html; charset=utf-8") // necessary or else the template will load as plain text
-
-	// Always render the layout.html as the base template
-	err = templ.ExecuteTemplate(w, "defaultLayout", data)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Printf("Error rendering layout: %v", err)
-		return err
-	}
-	return nil
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	return tmpl.ExecuteTemplate(w, "base", data)
 }

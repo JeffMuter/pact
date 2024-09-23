@@ -1,23 +1,16 @@
-{{ define "registerForm" }}
-{{ temaplte "header" . }}
-{{ temaplte "navbar" . }}
+{{ define "content" }}
 <section id="form-container">
   <h1>Register</h1>
   <div id="registration-form">
     <form hx-post="/register" hx-target="#registration-form" hx-swap="outerHTML">
       <label for="username">Username:</label>
       <input type="text" id="username" name="username" required>
-      <br><br>
-
       <label for="password">Password:</label>
       <input type="password" id="password" name="password" required>
-      <br><br>
-
       <button type="submit">Register</button>
     </form>
     <a hx-get="/login" hx-target="#form-container" hx-swap="innerHTML" href="#">Already have an account? Login
       here...</a>
   </div>
 </section>
-{{ template "footer" . }}
 {{ end }}

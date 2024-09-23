@@ -1,23 +1,51 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"pact/internal/db"
 	"pact/internal/pages"
-	"pact/internal/router"
 )
 
+type TemplateData struct {
+	Title   string
+	Content interface{}
+}
+
 func main() {
-	pages.InitTemplates()
-	err := db.OpenDatabase()
-	if err != nil {
-		log.Fatalf("db connections failed...: %v", err)
+	tr := pages.NewTemplateRenderer(
+		"./templates",
+		"layout.html",
+		"navbar.html",
+		"footer.html",
+	)
+
+	if err := tr.LoadTemplates(); err != nil {
+		log.Fatalf("Failed to load templates: %v", err)
 	}
-	mux := router.Router()
-	err = http.ListenAndServe(":8080", mux)
-	if err != nil {
-		fmt.Printf("error with listen&serve: %v", err)
-	}
+
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		data := TemplateData{
+			Title: "Login",
+			Content: map[string]string{
+				"Heading": "Login",
+			},
+		}
+		if err := tr.RenderTemplate(w, "login.html", data); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		data := TemplateData{
+			Title: "Register",
+			Content: map[string]string{
+				"Heading": "Registration Page",
+			},
+		}
+		if err := tr.RenderTemplate(w, "register.html", data); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
