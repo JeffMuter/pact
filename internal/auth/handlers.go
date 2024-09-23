@@ -94,7 +94,7 @@ func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form
 			"Title":   "Login",
 		}}
 	fmt.Println("login handler ran")
-	pages.RenderTemplate(w, "loginForm", data)
+	pages.RenderLayoutTemplate(w, "loginPage", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
@@ -104,6 +104,26 @@ func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registra
 			"Title":   "Register",
 		}}
 
-	fmt.Println("register handler ran")
-	pages.RenderTemplate(w, "registerForm", data)
+	fmt.Println("registerPage handler ran")
+	pages.RenderLayoutTemplate(w, "registerPage", data)
+}
+
+func ServeLoginForm(w http.ResponseWriter, r *http.Request) {
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Heading": "Login Page",
+		}}
+
+	fmt.Println("loginForm handler ran")
+	pages.RenderTemplateFraction(w, "loginForm", data)
+}
+
+func ServeRegistrationForm(w http.ResponseWriter, r *http.Request) { // registration form page
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Heading": "Registration Page",
+		}}
+
+	fmt.Println("registerForm handler ran")
+	pages.RenderTemplateFraction(w, "registerForm", data)
 }
