@@ -3,7 +3,6 @@ package router
 import (
 	"net/http"
 	"pact/internal/auth"
-	"pact/internal/pages"
 )
 
 func Router() *http.ServeMux {
@@ -11,7 +10,7 @@ func Router() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Register handlers
-	mux.Handle("/", auth.AuthMiddleware(http.HandlerFunc(pages.ServeHomePage)))
+	//	mux.Handle("/", auth.AuthMiddleware(http.HandlerFunc(pages.ServeHomePage)))
 
 	mux.HandleFunc("GET /login", auth.ServeLoginPage)
 	mux.HandleFunc("POST /login", auth.LoginFormHandler)

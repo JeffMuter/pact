@@ -94,7 +94,7 @@ func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form
 			"Title":   "Login",
 		}}
 	fmt.Println("login handler ran")
-	pages.RenderTemplate(w, "defaultLayout.html", "loginForm.html", data)
+	pages.RenderTemplate(w, "loginForm", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
@@ -105,5 +105,5 @@ func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registra
 		}}
 
 	fmt.Println("register handler ran")
-	pages.RenderTemplate(w, "defaultLayout.html", "registerForm.html", data)
+	pages.RenderTemplate(w, "registerForm", data)
 }

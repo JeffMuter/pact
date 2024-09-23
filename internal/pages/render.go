@@ -2,63 +2,51 @@ package pages
 
 import (
 	"fmt"
-	"io/fs"
 	"net/http"
 	"path/filepath"
 	"text/template"
 )
 
-type TemplateRenderer struct {
-	templates   map[string]*template.Template
-	templateDir string
-	baseLayout  string
-	partials    []string
-}
+var templates map[string]*template.Template
 
-func NewTemplateRenderer(templateDir, baseLayout string, partials ...string) *TemplateRenderer {
-	return &TemplateRenderer{
-		templates:   make(map[string]*template.Template),
-		templateDir: templateDir,
-		baseLayout:  baseLayout,
-		partials:    partials,
+func InitTemplates() error {
+	templates = make(map[string]*template.Template)
+
+	layouts, err := filepath.Glob("./internal/templates/contentTemplates/*.html")
+	if err != nil {
+		return err
 	}
+	fmt.Println(len(layouts))
+	fmt.Println(layouts)
+
+	includes, err := filepath.Glob("./internal/templates/fractions/*.html")
+	if err != nil {
+		return err
+	}
+	fmt.Println(len(includes))
+	fmt.Println(includes)
+
+	// Generate our templates map from our layouts/ and includes/ directories
+	for _, layout := range layouts {
+		includes = append(includes, layout)
+		name := filepath.Base(layout)
+		templates[name] = template.Must(template.ParseFiles(includes...))
+		fmt.Printf("template added: %s. Len of map: %d\n", name, len(templates))
+	}
+	return nil
 }
 
-func (tr *TemplateRenderer) LoadTemplates() error {
-	return filepath.Walk(tr.templateDir, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() || filepath.Ext(path) != ".html" {
-			return nil
-		}
-
-		templateName := filepath.Base(path)
-		if templateName == tr.baseLayout {
-			return nil
-		}
-
-		files := append([]string{filepath.Join(tr.templateDir, tr.baseLayout)}, path)
-		for _, partial := range tr.partials {
-			files = append(files, filepath.Join(tr.templateDir, partial))
-		}
-
-		tmpl, err := template.ParseFiles(files...)
-		if err != nil {
-			return fmt.Errorf("error parsing template %s: %v", templateName, err)
-		}
-
-		tr.templates[templateName] = tmpl
-		return nil
-	})
-}
-
-func (tr *TemplateRenderer) RenderTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
-	tmpl, ok := tr.templates[templateName]
+func RenderTemplate(w http.ResponseWriter, name string, data interface{}) {
+	tmpl, ok := templates[name+".html"]
 	if !ok {
-		return fmt.Errorf("template %s not found", templateName)
+		http.Error(w, fmt.Sprintf("The template %s does not exist.", name), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	return tmpl.ExecuteTemplate(w, "base", data)
+	w.Header().Set("Content-Type", "text/html")
+
+	err := tmpl.ExecuteTemplate(w, "defaultLayout", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
