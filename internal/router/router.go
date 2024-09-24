@@ -20,6 +20,10 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
 	mux.HandleFunc("POST /registeruser", auth.RegisterHandler)
 
+	// Serve static files
+	fileServer := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+	mux.Handle("/js/", http.StripPrefix("/js/", fileServer))
+	mux.Handle("/images/", http.StripPrefix("/images/", fileServer))
 	return mux
-
 }

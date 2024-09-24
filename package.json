@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:css": "tailwindcss -i ./internal/templates/styles.css -o ./internal/templates/index.css --watch",
+    "build:css": "tailwindcss -i ./static/styles.css -o ./static/index.css --watch",
     "dev:css": "tailwindcss -i ./src/input.css -o ./dist/styles.css --watch"
   },
   "keywords": [],

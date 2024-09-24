@@ -4,20 +4,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="./index.css" rel="stylesheet" />
+  <link href="/static/index.css" rel="stylesheet" />
   <title>{{ .Data.Title }}</title>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 </head>
 
-{{ template "navbar" . }}
 
-<body>
+<body class="bg-black">
+  {{ template "navbar" . }}
   <main>
     {{ block "content" . }}{{ end }}
   </main>
+  {{ template "footer" . }}
 </body>
 
-{{ template "footer" . }}
 
 </html>
 {{ end }}
