@@ -1,0 +1,16 @@
+{{define "stripeForm" }}
+
+<script src="https://js.stripe.com/v3/"></script>
+<form action="/create-checkout-session" method="POST">
+	<!-- Note: If using PHP set the action to /create-checkout-session.php -->
+
+	<input type="hidden" name="priceId" value="price_G0FvDp6vZvdwRZ" />
+	<button type="submit">Checkout</button>
+</form>
+<h1>Become A Member</h1>
+
+
+{{ end }}
+{{ define "stripeSucces" }}
+<h2>Something went wrong with your stripe payment...</h2>
+{{ end }}
