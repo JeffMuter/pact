@@ -6,10 +6,13 @@
 		<input type="text" id="username" name="username" required placeholder="Enter your username/email">
 
 		<label for="password">Password</label>
-		<input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="off">
+		<input type="password" id="password" name="password" required placeholder="Enter your password"
+			autocomplete="off">
 
 		<button type="submit">Login</button>
 	</form>
-	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="innerHTML" href="#">Not a user? Register Here...</a>
+	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="innerHTML" href="#">Not a user? Register
+		Here...</a>
+	<a hx-get="/stripeForm" hx-target="#form-container" hx-swap="innerHTML" href="#">Membership Form...</a>
 </section>
 {{ end }}

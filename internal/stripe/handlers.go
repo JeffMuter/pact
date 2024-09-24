@@ -2,12 +2,17 @@ package stripe
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"pact/internal/pages"
 
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/customer"
-	"github.com/stripe/stripe-go/v72/subscription"
+	"github.com/joho/godotenv"
+	"github.com/stripe/stripe-go/checkout/session"
+	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v79/customer"
+	"github.com/stripe/stripe-go/v79/subscription"
 )
 
 type SubscriptionRequest struct {
@@ -62,4 +67,36 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	// Return the subscription ID
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"subscriptionID": newSubscription.ID})
+}
+
+func ServeMembershipPage(w http.ResponseWriter, r *http.Request) {
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Title": "Membership",
+		}}
+	fmt.Println("membership page handler ran")
+	pages.RenderLayoutTemplate(w, "stripePage", data)
+}
+
+func ServeMembershipForm(w http.ResponseWriter, r *http.Request) {
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Title": "Membership",
+		}}
+	fmt.Println("membership form handler ran")
+	pages.RenderLayoutTemplate(w, "stripePage", data)
+}
+
+func CreateStripeSubSession() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("error loading env package")
+	}
+	stripe.Key = os.Getenv("STRIPE_KEY")
+	params := &stripe.CheckoutSessionParams{
+		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)), LineItems: []*stripe.CheckoutSessionLineItemParams{&stripe.CheckoutSessionLineItemParams{Price: stripe.String("{{PRICE_ID}}"), Quantity: stripe.Int64(1)}},
+		UIMode:    stripe.String(string(stripe.CheckoutSessionUIModeEmbedded)),
+		ReturnURL: stripe.String("https://example.com/checkout/return?session_id={CHECKOUT_SESSION_ID}"),
+	}
+	result, err := session.New(params)
 }

@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"pact/internal/auth"
+	"pact/internal/stripe"
 )
 
 func Router() *http.ServeMux {
@@ -19,6 +20,9 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /register", auth.ServeRegistrationPage)
 	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
 	mux.HandleFunc("POST /registeruser", auth.RegisterHandler)
+
+	mux.HandleFunc("GET /stripePage", stripe.ServeMembershipPage)
+	mux.HandleFunc("GET /stripeForm", stripe.ServeMembershipForm)
 
 	// Serve static files
 	fileServer := http.FileServer(http.Dir("static"))

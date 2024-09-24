@@ -1,15 +1,27 @@
-{{define "stripeForm" }}
+{{ define "stripeForm" }}
 
-<script src="https://js.stripe.com/v3/"></script>
-<form action="/create-checkout-session" method="POST">
-	<!-- Note: If using PHP set the action to /create-checkout-session.php -->
+<!DOCTYPE html>
+<html lang="en">
 
-	<input type="hidden" name="priceId" value="price_G0FvDp6vZvdwRZ" />
-	<button type="submit">Checkout</button>
-</form>
-<h1>Become A Member</h1>
+<head>
+	<meta charset="utf-8" />
+	<title>Accept a payment</title>
+	<meta name="description" content="A demo of a payment on Stripe" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="style.css" />
+	<!-- Add the Stripe.js script here -->
+	<script src="https://js.stripe.com/v3/"></script>
+	<script src="checkout.js" defer></script>
+</head>
 
+<body>
+	<!-- Display a payment form -->
+	<div id="checkout">
+		<!-- Checkout inserts the payment form here -->
+	</div>
+</body>
 
+</html>
 {{ end }}
 {{ define "stripeSucces" }}
 <h2>Something went wrong with your stripe payment...</h2>
