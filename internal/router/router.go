@@ -23,6 +23,7 @@ func Router() *http.ServeMux {
 
 	mux.HandleFunc("GET /stripePage", stripe.ServeMembershipPage)
 	mux.HandleFunc("GET /stripeForm", stripe.ServeMembershipForm)
+	mux.HandleFunc("GET /createSession", stripe.HandleCreateCheckoutSession)
 
 	// Serve static files
 	fileServer := http.FileServer(http.Dir("static"))
