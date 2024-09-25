@@ -1,28 +1,51 @@
 {{ define "stripeForm" }}
+<div id="checkout">
+	<button id="checkout-button">Subscribe</button>
+</div>
+<div id="error-message"></div>
+<script>
+	const stripe = Stripe('{{ .Data.StripePublishableKey }}'); // Make sure this is your actual publishable key
+	const checkoutButton = document.getElementById('checkout-button');
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-	<meta charset="utf-8" />
-	<title>Accept a payment</title>
-	<meta name="description" content="A demo of a payment on Stripe" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel="stylesheet" href="style.css" />
-	<!-- Add the Stripe.js script here -->
-	<script src="https://js.stripe.com/v3/"></script>
-	<script src="checkout.js" defer></script>
-</head>
-
-<body>
-	<!-- Display a payment form -->
-	<div id="checkout">
-		<!-- Checkout inserts the payment form here -->
-	</div>
-</body>
-
-</html>
+	checkoutButton.addEventListener('click', function () {
+		console.log('Button clicked');
+		fetch('/createSession', {
+			method: 'POST',
+		})
+			.then(function (response) {
+				console.log('Response received', response);
+				return response.json();
+			})
+			.then(function (session) {
+				console.log('Session data', session);
+				// Check if we're getting sessionId or session_id
+				const sessionId = session.sessionId || session.session_id;
+				if (!sessionId) {
+					throw new Error('No session ID received');
+				}
+				console.log('Redirecting to checkout with session ID:', sessionId);
+				return stripe.redirectToCheckout({sessionId: sessionId});
+			})
+			.then(function (result) {
+				if (result.error) {
+					console.error('Checkout error', result.error);
+					throw result.error;
+				}
+			})
+			.catch(function (error) {
+				console.error('Error:', error);
+				document.getElementById('error-message').textContent = error.message;
+			});
+	});
+</script>
 {{ end }}
-{{ define "stripeSucces" }}
-<h2>Something went wrong with your stripe payment...</h2>
+
+{{ define "stripeSuccess" }}
+<h2>Payment successful!</h2>
+<!-- Add more content for the success page -->
+{{ end }}
+
+{{ define "stripeError" }}
+<h2>Something went wrong with your Stripe payment...</h2>
+<!-- Add more content for the error page -->
 {{ end }}

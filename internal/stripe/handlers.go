@@ -78,46 +78,78 @@ func ServeMembershipPage(w http.ResponseWriter, r *http.Request) {
 	pages.RenderLayoutTemplate(w, "stripePage", data)
 }
 
-func ServeMembershipForm(w http.ResponseWriter, r *http.Request) {
-	data := pages.TemplateData{
-		Data: map[string]string{
-			"Title": "Membership",
-		}}
-	fmt.Println("membership form handler ran")
-	pages.RenderLayoutTemplate(w, "stripePage", data)
-}
-
-func createStripeSubSession() (string, error) {
+func createStripeSubSession() (*stripe.CheckoutSession, error) {
+	fmt.Println("createStripeSession begins...")
 	err := godotenv.Load()
 	if err != nil {
-		return "", fmt.Errorf("error loading env package")
+		return nil, fmt.Errorf("error loading env package")
 	}
+
 	stripe.Key = os.Getenv("STRIPE_KEY")
+	priceID := os.Getenv("STRIPE_MONTH_PRICE_ID")
+
 	params := &stripe.CheckoutSessionParams{
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
-				Price:    stripe.String("{{PRICE_ID}}"),
+				Price:    stripe.String(priceID),
 				Quantity: stripe.Int64(1),
 			},
 		},
 		UIMode:    stripe.String(string(stripe.CheckoutSessionUIModeEmbedded)),
 		ReturnURL: stripe.String("https://www.localhost:8081?session_id={CHECKOUT_SESSION_ID}"),
 	}
+
+	params.PaymentMethodTypes = stripe.StringSlice([]string{"card"})
+
 	result, err := session.New(params)
 	if err != nil {
-		return "", fmt.Errorf("failed to create stripe session: %w", err)
+		return nil, fmt.Errorf("failed to create stripe session: %w", err)
 	}
-	return result.URL, nil
+	fmt.Println("create stripe session ended successfully.")
+	fmt.Println("resultID: " + result.URL)
+	return result, nil
 }
 
 func HandleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
-	sessionURL, err := createStripeSubSession()
+	err := godotenv.Load()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println("error getting godotenv to load in create checkout process...")
 		return
 	}
 
-	// Redirect the user to the Stripe checkout page
-	http.Redirect(w, r, sessionURL, http.StatusSeeOther)
+	publishableId := os.Getenv("STRIPE_PUBLISHABLE_KEY")
+	fmt.Println("serve stripe form publishable id: " + publishableId)
+
+	session, err := createStripeSubSession()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println("error http internal server error while handling chechout session...")
+		return
+	}
+
+	// Return JSON response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"sessionId":            session.ID,
+		"stripePublishableKey": publishableId,
+	})
+}
+
+func ServeStripeForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("serving stripe form")
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("error getting godotenv to load in serve stripe form...")
+		return
+	}
+	publishableId := os.Getenv("STRIPE_PUBLISHABLE_KEY")
+	fmt.Println("serve stripe form publishable id: " + publishableId)
+	data := pages.TemplateData{
+		Data: map[string]string{
+			"Title":                "Membership",
+			"StripePublishableKey": publishableId,
+		},
+	}
+	pages.RenderTemplateFraction(w, "stripeForm", data)
 }
