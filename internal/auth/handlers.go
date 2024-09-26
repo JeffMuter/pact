@@ -64,6 +64,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "error parsing form", http.StatusBadRequest)
+		fmt.Errorf("")
 		return
 	}
 

@@ -34,7 +34,7 @@ func GenSessionId() (string, error) {
 func SetSession(email string, w http.ResponseWriter) error {
 	sessionToken, err := GenSessionId()
 	if err != nil {
-		return err
+		return fmt.Errorf("error generating sessionId")
 	}
 
 	db := db.GetDB()
@@ -43,7 +43,7 @@ func SetSession(email string, w http.ResponseWriter) error {
 
 	user, err := user.GetUserByEmail(email)
 	if err != nil {
-		fmt.Println("get user failed in setSession()")
+		return fmt.Errorf("get user failed in setSession()")
 	}
 	session.UserId = user.UserId
 	session.SessionToken = sessionToken
@@ -51,7 +51,7 @@ func SetSession(email string, w http.ResponseWriter) error {
 
 	err = addSession(db, session)
 	if err != nil {
-		log.Fatal("addSession() err in SetSession()")
+		return fmt.Errorf("error adding session %w", err)
 	}
 
 	http.SetCookie(w, &http.Cookie{
