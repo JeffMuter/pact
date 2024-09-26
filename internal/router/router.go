@@ -33,5 +33,7 @@ func Router() *http.ServeMux {
 	mux.Handle("GET /images/", http.StripPrefix("/images/", fileServer))
 
 	mux.HandleFunc("GET /", pages.ServeHomePage)
+	mux.HandleFunc("GET /homeContent", pages.ServeHomeContent)
+
 	return mux
 }

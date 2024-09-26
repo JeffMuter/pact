@@ -1,9 +1,11 @@
 {{ define "navbar" }}
 
-<nav>
-	<a hx-get="/" hx-target="#mainElement" hx-swap="innerHTML" href="#">Home</a>
-	<a hx-get="/loginPage" hx-target="#mainElement" hx-swap="innerHTML" href="#">Login</a>
-	<a hx-get="/registerPage" hx-target="#mainElement" hx-swap="innerHTML" href="#">Sign Up</a>
+<nav class="bg-zinc-500 flex align-bottom justify-end">
+	<a class="text-white" hx-get="/homeContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">Home</a>
+	<a class="text-red-200" hx-get="/loginForm" hx-target="#mainElement" hx-swap="innerHTML" href="#">Login</a>
+	<a class="text-blue-600" hx-get="/registerForm" hx-target="#mainElement" hx-swap="innerHTML" href="#">Sign
+		Up</a>
 </nav>
+
 
 {{ end }}
