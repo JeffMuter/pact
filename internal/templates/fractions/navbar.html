@@ -1,9 +1,9 @@
 {{ define "navbar" }}
 
 <nav>
-	<a href="/">Home</a>
-	<a href="/connect">Connect</a>
-	<a href="/account">My Profile</a>
+	<a hx-get="/" hx-target="#mainElement" hx-swap="innerHTML" href="#">Home</a>
+	<a hx-get="/loginPage" hx-target="#mainElement" hx-swap="innerHTML" href="#">Login</a>
+	<a hx-get="/registerPage" hx-target="#mainElement" hx-swap="innerHTML" href="#">Sign Up</a>
 </nav>
 
 {{ end }}

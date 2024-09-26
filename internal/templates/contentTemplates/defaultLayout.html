@@ -11,9 +11,9 @@
 </head>
 
 
-<body class="">
+<body>
   {{ template "navbar" . }}
-  <main>
+  <main id="mainElement">
     {{ block "content" . }}{{ end }}
   </main>
   {{ template "footer" . }}
