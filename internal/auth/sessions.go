@@ -26,12 +26,13 @@ func GenSessionId() (string, error) {
 	byteSlice := make([]byte, 32)
 	_, err := rand.Read(byteSlice)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error reading byte slice: %w", err)
 	}
 	return base64.URLEncoding.EncodeToString(byteSlice), nil
 }
 
 func SetSession(email string, w http.ResponseWriter) error {
+	fmt.Println("begun setting session...")
 	sessionToken, err := GenSessionId()
 	if err != nil {
 		return fmt.Errorf("error generating sessionId")
@@ -59,14 +60,23 @@ func SetSession(email string, w http.ResponseWriter) error {
 		Value:   sessionToken,
 		Expires: time.Now().Add(24 * time.Hour),
 	})
+	fmt.Println("successfully set session")
+
 	return nil
 }
 
 func addSession(db *sql.DB, session Session) error {
 	fmt.Printf("UserId: %v\nToken: %v\nCreated: %v\nExpires: %v\n", session.UserId, session.SessionToken, session.Created, session.Expires)
+
 	query := `INSERT INTO sessions(user_id, session_token, created_at, expires_at) VALUES($1, $2, $3, $4)`
+
 	_, err := db.Exec(query, session.UserId, session.SessionToken, session.Created, session.Expires)
+	if err != nil {
+		return fmt.Errorf("error excecuting query: %w", err)
+	}
+
 	fmt.Println(err)
+
 	return err
 }
 

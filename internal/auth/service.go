@@ -11,7 +11,7 @@ func validateUsernamePassword(email string, password string) error {
 	db := db.GetDB()
 
 	var hashedPassword, foundEmail string
-	query := "SELECT email, password FROM users WHERE email = $1"
+	query := "SELECT email, password_hash FROM users WHERE email = $1"
 
 	err := db.QueryRow(query, email).Scan(&foundEmail, &hashedPassword)
 	if err != nil {

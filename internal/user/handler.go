@@ -23,7 +23,7 @@ func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 func GetUserByEmail(email string) (*User, error) {
 	user := makeUser()
 	db := db.GetDB()
-	query := `SELECT * FROM users WHERE id = $1`
+	query := `SELECT * FROM users WHERE email = $1`
 	err := db.QueryRow(query, email).Scan(
 		&user.UserId,
 		&user.Username,

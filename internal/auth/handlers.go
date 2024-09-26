@@ -52,6 +52,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = SetSession(user.Email, w)
 	if err != nil {
+		fmt.Printf("error setting session: %v", err)
 		http.Error(w, "Failed to set session", http.StatusBadRequest)
 		return
 	}
@@ -64,7 +65,6 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "error parsing form", http.StatusBadRequest)
-		fmt.Errorf("")
 		return
 	}
 
@@ -78,7 +78,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	err = SetSession(formEmail, w)
 	if err != nil {
 		http.Error(w, "Failed to set session", http.StatusBadRequest)
-		// should log this
+		fmt.Printf("error setting session: %v", err)
 		return
 	}
 
