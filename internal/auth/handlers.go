@@ -11,7 +11,7 @@ import (
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-
+	fmt.Println("registration in progress...")
 	db := db.GetDB()
 
 	var user user.User
@@ -23,6 +23,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.Email = r.FormValue("email")
+	user.Username = r.FormValue("username")
+	user.Role = r.FormValue("role")
 	user.Password = r.FormValue("password")
 	if user.Email == "" || user.Password == "" {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)
@@ -38,15 +40,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user.Password = string(hashedPassword)
 
 	// create sql statement
-	query, err := db.Prepare("INSERT INTO users (email, password) VALUES ($1, $2)")
-	if err != nil {
-		http.Error(w, "Error preparing query", http.StatusInternalServerError)
-		return
-	}
-	defer query.Close()
+	query := `INSERT INTO users (email, username, role, password_hash) VALUES ($1, $2, $3, $4)`
 
-	_, err = query.Exec(user.Email, user.Password)
+	_, err = db.Exec(query, user.Email, user.Username, user.Role, user.Password)
 	if err != nil {
+		fmt.Println("error excecuting query: %w", err)
 		http.Error(w, "Error executing query", http.StatusInternalServerError)
 		return
 	}

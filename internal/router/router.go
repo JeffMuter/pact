@@ -20,7 +20,7 @@ func Router() *http.ServeMux {
 
 	mux.HandleFunc("GET /registerPage", auth.ServeRegistrationPage)
 	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
-	mux.HandleFunc("POST /registeruser", auth.RegisterHandler)
+	mux.HandleFunc("POST /register", auth.RegisterHandler)
 
 	mux.HandleFunc("GET /stripePage", stripe.ServeMembershipPage)
 	mux.HandleFunc("GET /stripeForm", stripe.ServeStripeForm)

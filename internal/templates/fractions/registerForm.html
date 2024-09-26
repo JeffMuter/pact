@@ -1,16 +1,21 @@
 {{ define "registerForm" }}
 <section id="form-container">
-	<h1>Register</h1>
+	<h1>register</h1>
 	<div id="registration-form">
-		<form hx-post="/register" hx-target="#registration-form" hx-swap="outerHTML">
-			<label for="username">Username:</label>
+		<form class="flex flex-col p-2 gap-8 bg-gray-500 text-black" hx-post="/register"
+			hx-target="#registration-form" hx-swap="outerhtml">
+			<label for="email">email:</label>
+			<input type="text" id="email" name="email" required>
+			<label for="username">username:</label>
 			<input type="text" id="username" name="username" required>
-			<label for="password">Password:</label>
+			<label for="role">manager or worker:</label>
+			<input type="text" id="role" name="role" required>
+			<label for="password">password:</label>
 			<input type="password" id="password" name="password" required>
-			<button type="submit">Register</button>
+			<button type="submit">register</button>
 		</form>
-		<a hx-get="/loginForm" hx-target="#form-container" hx-swap="innerHTML" href="#">Already have an account?
-			Login
+		<a hx-get="/loginForm" hx-target="#form-container" hx-swap="innerhtml" href="#">already have an account?
+			login
 			here...</a>
 	</div>
 </section>
