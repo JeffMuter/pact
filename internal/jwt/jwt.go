@@ -2,68 +2,69 @@ package jwt
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("your_secret_key") // Replace with a secure secret key
+// this JWT package is solely responsible for operations involving the creation & validation of JWTs.
+// keep in mind, we need a secret key which is stored elsewhere.
 
-type Claims struct {
-	UserID           uint `json:"user_id"`
-	RegisteredClaims jwt.RegisteredClaims
+var jwtKey []byte
+
+func init() {
+	// Load the JWT key from an environment variable
+	jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
+	if len(jwtKey) == 0 {
+		panic("JWT_SECRET_KEY environment variable not set")
+	}
 }
 
-func (c *Claims) Valid() error {
-	// Check if the token has expired
-	if c.RegisteredClaims.ExpiresAt != nil && time.Now().After(c.RegisteredClaims.ExpiresAt.Time) {
-		return errors.New("token has expired")
-	}
+// GenerateToken() takes in a userId, and generates a tokenString.
+func GenerateToken(userId uint) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userId":     userId,
+		"expiration": time.Now().Add(time.Hour * 6).Unix(),
+	})
 
-	// Check if the token is being used before its "not before" time
-	if c.RegisteredClaims.NotBefore != nil && time.Now().Before(c.RegisteredClaims.NotBefore.Time) {
-		return errors.New("token is not valid yet")
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", fmt.Errorf("error signing string: %w", err)
 	}
-
-	// Check if the issued at time is valid (not issued in the future)
-	if c.RegisteredClaims.IssuedAt != nil && time.Now().Before(c.RegisteredClaims.IssuedAt.Time) {
-		return errors.New("token issued in the future")
-	}
-
-	// Custom validation: Check if the username is not empty
-	if c.UserID == 0 {
-		return errors.New("invalid claim: username is empty")
-	}
-
-	return nil
+	return tokenString, nil
 }
 
-func GenerateToken(userID uint) (string, error) {
-	expirationTime := time.Now().Add(6 * time.Hour)
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
-}
-
-func ValidateToken(tokenString string) (*Claims, error) {
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+// ValidateToken() takes a tokenString,and validates that is hasn't expired. If expired, error.
+func ValidateToken(tokenString string) (uint, error) {
+	// Parse the token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validate the alg is what we expect
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return jwtKey, nil
 	})
 
 	if err != nil {
-		return nil, err
+		return 0, fmt.Errorf("error parsing token: %w", err)
 	}
 
-	if !token.Valid {
-		return nil, errors.New("invalid token")
-	}
+	// Check if the token is valid
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Check if the token has expired
+		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			return 0, errors.New("token has expired")
+		}
 
-	return claims, nil
+		// Extract the user ID
+		userID, ok := claims["user_id"].(float64)
+		if !ok {
+			return 0, errors.New("invalid user_id in token")
+		}
+
+		return uint(userID), nil
+	}
+	return 0, errors.New("invalid token")
 }
