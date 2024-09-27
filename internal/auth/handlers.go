@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"pact/internal/db"
+	"pact/internal/jwt"
 	"pact/internal/pages"
 	"pact/internal/user"
 
@@ -50,14 +52,22 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// response successful
 
-	err = SetSession(user.Email, w)
+	token, err := jwt.GenerateToken(uint(user.UserId))
 	if err != nil {
-		fmt.Printf("error setting session: %v", err)
-		http.Error(w, "Failed to set session", http.StatusBadRequest)
+		fmt.Printf("error generating token (userId: %d): %v\n", user.UserId, err)
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
 
+	// Prepare response
+	response := map[string]string{
+		"message": "User registered successfully",
+		"token":   token,
+	}
+	// Send JSON response
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
