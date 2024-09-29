@@ -7,6 +7,12 @@
 		complete
 		tasks with customizablerewards and cons, bringing clarity and order to your unique connection(bond?)</p>
 	<button>Create Account</button>
+	<button hx-get="/stripeForm" hx-target="#form-container" hx-swap="innerHTML"
+		hx-headers='js:{"Authorization": "Bearer "+localStorage.getItem("jwt")}'
+		hx-trigger="click, jwtReady from:body" href="#">
+		Become a Member
+	</button>
+
 </section>
 
 <!-- dashboard for managers -->

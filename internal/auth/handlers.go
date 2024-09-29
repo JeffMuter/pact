@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"pact/internal/db"
-	"pact/internal/jwt"
 	"pact/internal/pages"
 	"pact/internal/user"
 
@@ -24,6 +23,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set User fields
 	user.Email = r.FormValue("email")
 	user.Username = r.FormValue("username")
 	user.Role = r.FormValue("role")
@@ -33,7 +33,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// hash
+	// get hashed version of password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
@@ -50,9 +50,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error executing query", http.StatusInternalServerError)
 		return
 	}
-	// response successful
 
-	token, err := jwt.GenerateToken(uint(user.UserId))
+	// response successful
+	token, err := GenerateToken(uint(user.UserId))
 	if err != nil {
 		fmt.Printf("error generating token (userId: %d): %v\n", user.UserId, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
@@ -85,12 +85,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	err = SetSession(formEmail, w)
-	if err != nil {
-		http.Error(w, "Failed to set session", http.StatusBadRequest)
-		fmt.Printf("error setting session: %v", err)
-		return
-	}
+	err := GenerateToken()
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 	http.Error(w, "Username or password incorrect... Try again.", http.StatusBadRequest)

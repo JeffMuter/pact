@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
 // this JWT package is solely responsible for operations involving the creation & validation of JWTs.
@@ -15,6 +16,10 @@ import (
 var jwtKey []byte
 
 func init() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("godot couldn't open env")
+	}
 	// Load the JWT key from an environment variable
 	jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 	if len(jwtKey) == 0 {
