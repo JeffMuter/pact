@@ -69,16 +69,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
-
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "error parsing form", http.StatusBadRequest)
 		return
 	}
-
 	formEmail := r.FormValue("email")
 	formPassword := r.FormValue("password")
-
 	user, err := validateUsernamePassword(formEmail, formPassword)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error validating user by email and password: %v", err), http.StatusBadRequest)
@@ -90,12 +87,19 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isSecure := r.TLS != nil
+	sameSite := http.SameSiteStrictMode
+	if !isSecure {
+		sameSite = http.SameSiteLaxMode
+	}
+
 	http.SetCookie(w, &http.Cookie{
-		Name:     "Bearer token",
+		Name:     "Bearer",
 		Value:    token,
 		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   isSecure,
+		SameSite: sameSite,
+		Path:     "/",
 	})
 	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
 }

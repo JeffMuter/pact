@@ -1,13 +1,13 @@
 {{ define "guest" }}
 
 <!-- main hero -->
-<section>
+<section class="flex">
 	<h1>The Pact</h1>
 	<p>Empower your dynamic with structured task management for manager/worker relationships. Create, track, and
 		complete
 		tasks with customizablerewards and cons, bringing clarity and order to your unique connection(bond?)</p>
 	<button>Create Account</button>
-	<button hx-get="/stripeForm" hx-target="#form-container" hx-swap="innerHTML"
+	<button hx-get="/stripeForm" hx-target="#mainElement" hx-swap="innerHTML"
 		hx-headers='js:{"Authorization": "Bearer "+localStorage.getItem("jwt")}'
 		hx-trigger="click, jwtReady from:body" href="#">
 		Become a Member

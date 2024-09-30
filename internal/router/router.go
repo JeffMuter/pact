@@ -14,6 +14,12 @@ func Router() *http.ServeMux {
 	// Register handlers
 	//	mux.Handle("/", auth.AuthMiddleware(http.HandlerFunc(pages.ServeHomePage)))
 
+	// guest page: the page non-logged-in users see
+	mux.HandleFunc("GET /", pages.ServeGuestPage)
+	mux.HandleFunc("GET /homeContent", pages.ServeGuestContent)
+
+	// home page: page seen by logged in users
+
 	// log in
 	mux.HandleFunc("GET /loginPage", auth.ServeLoginPage)
 	mux.HandleFunc("GET /loginForm", auth.ServeLoginForm)
@@ -37,9 +43,6 @@ func Router() *http.ServeMux {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
 	mux.Handle("GET /js/", http.StripPrefix("/js/", fileServer))
 	mux.Handle("GET /images/", http.StripPrefix("/images/", fileServer))
-
-	mux.HandleFunc("GET /", pages.ServeHomePage)
-	mux.HandleFunc("GET /homeContent", pages.ServeHomeContent)
 
 	return mux
 }
