@@ -19,23 +19,4 @@
 			here...</a>
 	</div>
 </section>
-
-<script>
-	// when htmx request is returned, this function fires, and this function's job is to add the jwt to the local storage
-	document.body.addEventListener('htmx:afterRequest', function (event) {
-		if (event.detail.successful && event.detail.xhr.responseURL.endsWith('/signin')) {
-			const response = JSON.parse(event.detail.xhr.responseText);
-			if (response.token) {
-				localStorage.setItem('jwt', response.token);
-				console.log('JWT stored in localStorage');
-				// Dispatch an event to notify that JWT is ready
-				document.body.dispatchEvent(new CustomEvent('jwtReady'));
-			} else {
-				console.log("token not found in response, thus, could not be set.")
-			}
-		} else {
-			console.log("htmx event was not successful, not going to look for token")
-		}
-	});
-</script>
 {{ end }}

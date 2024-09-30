@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"pact/internal/db"
@@ -59,15 +58,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare response
-	response := map[string]string{
-		"message": "User registered successfully",
-		"token":   token,
-	}
-	// Send JSON response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Bearer token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
@@ -81,14 +79,25 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	formEmail := r.FormValue("email")
 	formPassword := r.FormValue("password")
 
-	err = validateUsernamePassword(formEmail, formPassword)
+	user, err := validateUsernamePassword(formEmail, formPassword)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("error validating user by email and password: %v", err), http.StatusBadRequest)
+		return
 	}
-	err := GenerateToken()
+	token, err := GenerateToken(uint(user.UserId))
+	if err != nil {
+		http.Error(w, "error generating token", http.StatusInternalServerError)
+		return
+	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-	http.Error(w, "Username or password incorrect... Try again.", http.StatusBadRequest)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Bearer token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
 }
 
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
