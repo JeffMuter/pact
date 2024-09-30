@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"pact/internal/auth"
 	"pact/internal/pages"
+	"pact/internal/relationships"
 	"pact/internal/stripe"
 )
 
@@ -27,6 +28,9 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /stripePage", auth.AuthMiddleware(stripe.ServeMembershipPage))
 	mux.HandleFunc("GET /stripeForm", auth.AuthMiddleware(stripe.ServeStripeForm))
 	mux.HandleFunc("POST /createSession", auth.AuthMiddleware(stripe.HandleCreateCheckoutSession))
+
+	// relationships
+	mux.HandleFunc("GET /relationshipContent", auth.AuthMiddleware(relationships.ServePageContent))
 
 	// Serve static files
 	fileServer := http.FileServer(http.Dir("static"))

@@ -7,14 +7,14 @@ import (
 func ServeHomePage(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := TemplateData{
 		Data: map[string]string{
-			"Title": "Home",
+			"Title": "Pact",
 		}}
 	RenderLayoutTemplate(w, "homePage", data)
 }
 func ServeHomeContent(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := TemplateData{
 		Data: map[string]string{
-			"Title": "Home",
+			"Title": "Pact",
 		}}
-	RenderTemplateFraction(w, "home", data)
+	RenderTemplateFraction(w, "guest", data)
 }
