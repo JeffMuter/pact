@@ -19,35 +19,5 @@
   {{ template "footer" . }}
 </body>
 
-<script>
-  // this script will wait for HTML updates, and local-store a handler route. If the user reloads, we use this handler, or send them to home.
-  function updateReloadHandler(element) {
-    const reloadHandler = element.getAttribute('data-reload-handler');
-    if (reloadHandler) {
-      sessionStorage.setItem('reloadHandler', reloadHandler);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', (event) => {
-    const mainElement = document.getElementById('mainElement');
-    updateReloadHandler(mainElement);
-  });
-
-  // Add event listener for page reload
-  window.addEventListener('load', (event) => {
-    const reloadHandler = sessionStorage.getItem('reloadHandler');
-    if (reloadHandler && reloadHandler !== '/') {
-      htmx.ajax('GET', reloadHandler, {target: '#mainElement', swap: 'innerHTML'});
-    }
-  });
-
-  // Listen for HTMX after-swap event
-  document.body.addEventListener('htmx:afterSwap', (event) => {
-    if (event.detail.target.id === 'mainElement') {
-      updateReloadHandler(event.detail.target);
-    }
-  });
-</script>
-
 </html>
 {{ end }}

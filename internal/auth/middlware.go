@@ -10,19 +10,20 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+			http.Redirect(w, r, "/loginPage", http.StatusFound)
 			return
 		}
 
 		bearerToken := strings.Split(authHeader, " ")
 		if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
-			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+			http.Redirect(w, r, "/loginPage", http.StatusFound)
 			return
 		}
 
 		userID, err := ValidateToken(bearerToken[1])
 		if err != nil {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			// if the token is invalid, send them to the login page...
+			http.Redirect(w, r, "/loginPage", http.StatusFound)
 			return
 		}
 

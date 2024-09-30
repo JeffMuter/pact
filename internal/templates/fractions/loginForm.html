@@ -11,7 +11,8 @@
 
 		<button type="submit">Login</button>
 	</form>
-	<a hx-get="/registerForm" hx-targete"#form-container" hx-swap="innerHTML" href="#">Not a user? Register
-		Here...</a>
+	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="outerHTML" hx-push-url="registerPage"
+		href="#">Not
+		a user? Register Here...</a>
 </section>
 {{ end }}
