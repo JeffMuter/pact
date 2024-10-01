@@ -33,3 +33,18 @@ func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{}
 	RenderTemplateFraction(w, "guestNavbar", data)
 }
+
+func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Data: map[string]string{
+			"Title": "Pact",
+		}}
+	RenderLayoutTemplate(w, "bucketsPage", data)
+}
+func ServeBucketsContent(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Data: map[string]string{
+			"Title": "Pact",
+		}}
+	RenderTemplateFraction(w, "buckets", data)
+}

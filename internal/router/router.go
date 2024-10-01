@@ -17,6 +17,8 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /descriptionContent", pages.ServeDescriptionContent)
 
 	// home page: page seen by logged in users
+	mux.HandleFunc("GET /", auth.AuthMiddleware(pages.ServeBucketsPage))
+	mux.HandleFunc("GET /bucketContent", auth.AuthMiddleware(pages.ServeBucketContent))
 
 	// log in
 	mux.HandleFunc("GET /loginPage", auth.ServeLoginPage)
