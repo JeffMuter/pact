@@ -1,0 +1,16 @@
+{{ define "navbar" }}
+
+<nav class="navbar flex justify-between bg-gray-900 text-emerald-600">
+	<h2>Pact</h2>
+	<div class="justify-end gap-4 ">
+		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
+			hx-get="/homeContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">Home</a>
+		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
+			hx-get="/loginForm" hx-target="#mainElement" hx-swap="innerHTML" href="#">Login</a>
+		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
+			hx-get="/registerForm" hx-target="#mainElement" hx-swap="innerHTML" href="#">Sign
+			Up</a>
+	</div>
+</nav>
+
+{{ end }}

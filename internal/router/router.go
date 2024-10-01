@@ -30,6 +30,10 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
 	mux.HandleFunc("POST /register", auth.RegisterHandler)
 
+	mux.HandleFunc("GET /guestNavbar", pages.ServeGuestNavbar)
+	mux.HandleFunc("GET /loggedInNavbar", pages.ServeLoggedInNavbar)
+	mux.HandleFunc("GET /memberNavbar", pages.ServeMemberNavbar)
+
 	// stripe
 	mux.HandleFunc("GET /stripePage", auth.AuthMiddleware(stripe.ServeMembershipPage))
 	mux.HandleFunc("GET /stripeForm", auth.AuthMiddleware(stripe.ServeStripeForm))
