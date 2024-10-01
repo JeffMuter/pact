@@ -11,12 +11,10 @@ import (
 func Router() *http.ServeMux {
 
 	mux := http.NewServeMux()
-	// Register handlers
-	//	mux.Handle("/", auth.AuthMiddleware(http.HandlerFunc(pages.ServeHomePage)))
 
 	// guest page: the page non-logged-in users see
-	mux.HandleFunc("GET /", pages.ServeGuestPage)
-	mux.HandleFunc("GET /homeContent", pages.ServeGuestContent)
+	mux.HandleFunc("GET /description", pages.ServeDescriptionPage)
+	mux.HandleFunc("GET /descriptionContent", pages.ServeDescriptionContent)
 
 	// home page: page seen by logged in users
 
@@ -30,9 +28,10 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
 	mux.HandleFunc("POST /register", auth.RegisterHandler)
 
+	// navbars for the different types of user authorization.
 	mux.HandleFunc("GET /guestNavbar", pages.ServeGuestNavbar)
-	mux.HandleFunc("GET /loggedInNavbar", pages.ServeLoggedInNavbar)
-	mux.HandleFunc("GET /memberNavbar", pages.ServeMemberNavbar)
+	mux.HandleFunc("GET /loggedInNavbar", auth.AuthMiddleware(pages.ServeLoggedInNavbar))
+	mux.HandleFunc("GET /memberNavbar", auth.AuthMiddleware(pages.ServeMemberNavbar))
 
 	// stripe
 	mux.HandleFunc("GET /stripePage", auth.AuthMiddleware(stripe.ServeMembershipPage))

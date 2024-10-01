@@ -4,14 +4,14 @@ import (
 	"net/http"
 )
 
-func ServeGuestPage(w http.ResponseWriter, r *http.Request) {
+func ServeDescriptionPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Data: map[string]string{
 			"Title": "Pact",
 		}}
 	RenderLayoutTemplate(w, "guestPage", data)
 }
-func ServeGuestContent(w http.ResponseWriter, r *http.Request) {
+func ServeDescriptionContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Data: map[string]string{
 			"Title": "Pact",
