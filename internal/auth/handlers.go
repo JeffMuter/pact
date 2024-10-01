@@ -40,7 +40,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Password = string(hashedPassword)
 
-	// create sql statement
+	// create user in db
 	query := `INSERT INTO users (email, username, role, password_hash) VALUES ($1, $2, $3, $4)`
 
 	_, err = db.Exec(query, user.Email, user.Username, user.Role, user.Password)
@@ -81,6 +81,11 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error validating user by email and password: %v", err), http.StatusBadRequest)
 		return
 	}
+	handleLoginProcedure(w, r, &user)
+}
+
+func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *user.User) {
+
 	token, err := GenerateToken(uint(user.UserId))
 	if err != nil {
 		http.Error(w, "error generating token", http.StatusInternalServerError)
