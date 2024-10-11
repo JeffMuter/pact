@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"pact/internal/db"
@@ -12,12 +13,16 @@ func main() {
 	err := db.OpenDatabase()
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)
+	} else {
+		fmt.Println("db opened...")
 	}
 
 	// Initialize templates
 	err = pages.InitTemplates()
 	if err != nil {
 		log.Fatalf("Failed to initialize templates: %v", err)
+	} else {
+		fmt.Println("templates initialized...")
 	}
 
 	// Setup route
