@@ -13,6 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)
 	}
+
 	// Initialize templates
 	err = pages.InitTemplates()
 	if err != nil {

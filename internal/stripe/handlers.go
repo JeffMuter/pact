@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"pact/internal/pages"
+	"pact/internal/user"
 
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v79"
@@ -152,4 +153,9 @@ func ServeStripeForm(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	pages.RenderTemplateFraction(w, "stripeForm", data)
+}
+
+func validateSubscriptionStatus(*user.User) error {
+
+	return nil
 }

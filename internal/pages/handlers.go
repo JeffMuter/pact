@@ -37,14 +37,14 @@ func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
 func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Data: map[string]string{
-			"Title": "Pact",
+			"Title": "Buckets",
 		}}
 	RenderLayoutTemplate(w, "bucketsPage", data)
 }
 func ServeBucketsContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Data: map[string]string{
-			"Title": "Pact",
+			"Title": "Buckets",
 		}}
 	RenderTemplateFraction(w, "buckets", data)
 }
