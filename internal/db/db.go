@@ -12,7 +12,7 @@ var db *sql.DB
 
 func OpenDatabase() error {
 	var err error
-	db, err = sql.Open("sqlite3", "./database.db") // pact.db is the file that will hold your SQLite database
+	db, err = sql.Open("sqlite3", "./database/database.db")
 	if err != nil {
 		return fmt.Errorf("error unable to connect to db: %w", err)
 	}
