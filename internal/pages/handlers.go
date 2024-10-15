@@ -24,14 +24,14 @@ func ServeGuestNavbar(w http.ResponseWriter, r *http.Request) {
 	RenderTemplateFraction(w, "guestNavbar", data)
 }
 
-func ServeLoggedInNavbar(w http.ResponseWriter, r *http.Request) {
+func ServeRegisteredNavbar(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{}
-	RenderTemplateFraction(w, "guestNavbar", data)
+	RenderTemplateFraction(w, "registeredNavbar", data)
 }
 
 func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{}
-	RenderTemplateFraction(w, "guestNavbar", data)
+	RenderTemplateFraction(w, "memberNavbar", data)
 }
 
 func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
