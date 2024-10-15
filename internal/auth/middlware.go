@@ -36,6 +36,9 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		// determine if a member to add to context
+		isMember, err := database
+
 		// Add the user ID to the request context
 		ctx := context.WithValue(r.Context(), "userID", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))

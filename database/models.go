@@ -12,7 +12,7 @@ import (
 type AssignedPunishment struct {
 	AssignedPunishmentID int64
 	PunishmentID         int64
-	SubID                int64
+	WorkerID             int64
 	AssignedTaskID       int64
 	CompletedAt          sql.NullTime
 }
@@ -20,7 +20,8 @@ type AssignedPunishment struct {
 type AssignedTask struct {
 	AssignedTaskID int64
 	TaskID         int64
-	SubID          int64
+
+	WorkerID       int64
 	Points         int64
 	DueTime        time.Time
 	RequiresImage  bool
@@ -31,14 +32,14 @@ type AssignedTask struct {
 
 type Punishment struct {
 	PunishmentID int64
-	DomID        int64
+	ManagerID    int64
 	Title        string
 	Description  sql.NullString
 }
 
 type Reward struct {
 	RewardID    int64
-	DomID       int64
+	ManagerID   int64
 	Title       string
 	Description sql.NullString
 	PointCost   int64
@@ -46,7 +47,7 @@ type Reward struct {
 
 type Task struct {
 	TaskID          int64
-	DomID           int64
+	ManagerID       int64
 	Title           string
 	Description     sql.NullString
 	DefaultPoints   int64
@@ -56,17 +57,18 @@ type Task struct {
 	WordCount       sql.NullInt64
 }
 
-type TaskSubmission struct {
-	SubmissionID   int64
-	AssignedTaskID int64
-	SubmissionTime sql.NullTime
-	ImagePath      sql.NullString
-	VideoPath      sql.NullString
-	TextContent    sql.NullString
+type TaskWorkermission struct {
+	WorkermissionID   int64
+	AssignedTaskID    int64
+	WorkermissionTime sql.NullTime
+	ImagePath         sql.NullString
+	VideoPath         sql.NullString
+	TextContent       sql.NullString
 }
 
 type User struct {
 	UserID       int64
+	Email        string
 	Username     string
 	PasswordHash string
 	Role         string

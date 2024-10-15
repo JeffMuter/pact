@@ -1,9 +1,10 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"pact/internal/db"
+	"pact/database"
 	"pact/internal/pages"
 )
 
@@ -20,22 +21,14 @@ func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	pages.RenderLayoutTemplate(w, "registerForm", data)
 }
 
-func GetUserByEmail(email string) (*User, error) {
-	user := makeUser()
-	db := db.GetDB()
-	query := `SELECT * FROM users WHERE email = $1`
-	err := db.QueryRow(query, email).Scan(
-		&user.UserId,
-		&user.Username,
-		&user.Email,
-		&user.Password,
-		&user.Role,
-		&user.Created_at,
-		&user.Updated_at,
-	)
+func GetUserByEmail(email string) (*database.User, error) {
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	user, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		return user, fmt.Errorf("error scanning row from query to get a user from an email(e: %s): %w", email, err)
+		return &user, fmt.Errorf("error scanning row from query to get a user from an email(e: %s): %w", email, err)
 	}
 
-	return user, nil
+	return &user, nil
 }

@@ -88,8 +88,8 @@ func RenderLayoutTemplate(w http.ResponseWriter, name string, data interface{}) 
 
 	// since full page loads have a navbar dependent on the auth status of the user: guest | registered | member,
 	// we'll auth the user here, and set the proper navbar
-
-	fmt.Println("Rendering layout template:", name)
+	authStatus :=
+		fmt.Println("Rendering layout template:", name)
 	tmpl, ok := tmplConstruct.layouts[name]
 	if !ok {
 		http.Error(w, fmt.Sprintf("The template %s does not exist.", name), http.StatusInternalServerError)

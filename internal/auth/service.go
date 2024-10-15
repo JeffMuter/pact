@@ -1,19 +1,21 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"pact/internal/db"
-	"pact/internal/user"
+	"pact/database"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-func validateUsernamePassword(email string, password string) (user.User, error) {
-	db := db.GetDB()
-	var user user.User
-	query := "SELECT id, email, password_hash, role FROM users WHERE email = $1"
-	err := db.QueryRow(query, email).Scan(&user.UserId, &user.Email, &user.Password, &user.Role)
+func validateUsernamePassword(email string, password string) (database.User, error) {
+	var user database.User
+
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	user, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return user, fmt.Errorf("invalid email or password")
@@ -23,7 +25,7 @@ func validateUsernamePassword(email string, password string) (user.User, error) 
 	}
 
 	// Compare provided password to the password from the db
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		// Password doesn't match, but we don't want to reveal this information
 		return user, fmt.Errorf("invalid email or password")
