@@ -5,5 +5,5 @@ sql:
     queries: "database/queries/"
     gen:
       go:
-        package: "db"
+        package: "database"
         out: "database/generated"
