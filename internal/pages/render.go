@@ -84,33 +84,38 @@ func InitTemplates() error {
 	return nil
 }
 
-func RenderLayoutTemplate(w http.ResponseWriter, name string, data interface{}) {
+func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
 
 	// since full page loads have a navbar dependent on the auth status of the user: guest | registered | member,
 	// we'll auth the user here, and set the proper navbar
-	authStatus :=
-		fmt.Println("Rendering layout template:", name)
-	tmpl, ok := tmplConstruct.layouts[name]
+	authStatus := r.Context().Value("authStatus").(string)
+
+	// use authStatus to add to the data, to render the proper navbar
+	data.Data["authStatus"] = authStatus
+
+	tmpl, ok := tmplConstruct.layouts[templateName]
 	if !ok {
-		http.Error(w, fmt.Sprintf("The template %s does not exist.", name), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("The template %s does not exist.", templateName), http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "text/html")
+
 	err := tmpl.ExecuteTemplate(w, "defaultLayout", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func RenderTemplateFraction(w http.ResponseWriter, name string, data interface{}) {
-	fmt.Println("Rendering fraction:", name)
-	tmpl, ok := tmplConstruct.fractions[name]
+func RenderTemplateFraction(w http.ResponseWriter, templateName string, data TemplateData) {
+	fmt.Println("Rendering fraction:", templateName)
+	tmpl, ok := tmplConstruct.fractions[templateName]
 	if !ok {
-		http.Error(w, fmt.Sprintf("The template fraction %s does not exist.", name), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("The template fraction %s does not exist.", templateName), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
-	err := tmpl.ExecuteTemplate(w, name, data)
+	err := tmpl.ExecuteTemplate(w, templateName, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
