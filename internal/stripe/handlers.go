@@ -6,8 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"pact/internal/pages"
-	"pact/internal/user"
+	"pact/database"
 
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v79"
@@ -76,7 +75,7 @@ func ServeMembershipPage(w http.ResponseWriter, r *http.Request) {
 			"Title": "Membership",
 		}}
 	fmt.Println("membership page handler ran")
-	pages.RenderLayoutTemplate(w, "stripePage", data)
+	pages.RenderLayoutTemplate(w, r, "stripePage", data)
 }
 
 func createStripeSubSession() (*stripe.CheckoutSession, error) {
@@ -155,7 +154,7 @@ func ServeStripeForm(w http.ResponseWriter, r *http.Request) {
 	pages.RenderTemplateFraction(w, "stripeForm", data)
 }
 
-func validateSubscriptionStatus(*user.User) error {
+func validateSubscriptionStatus(*database.User) error {
 
 	return nil
 }

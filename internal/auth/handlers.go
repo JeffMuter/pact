@@ -3,9 +3,9 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"pact/database"
 	"pact/internal/db"
 	"pact/internal/pages"
-	"pact/internal/user"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,7 +14,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("registration in progress...")
 	db := db.GetDB()
 
-	var user user.User
+	var user database.User
 
 	err := r.ParseForm()
 	if err != nil {
@@ -26,24 +26,24 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user.Email = r.FormValue("email")
 	user.Username = r.FormValue("username")
 	user.Role = r.FormValue("role")
-	user.Password = r.FormValue("password")
-	if user.Email == "" || user.Password == "" {
+	user.PasswordHash = r.FormValue("password")
+	if user.Email == "" || user.PasswordHash == "" {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)
 		return
 	}
 
 	// get hashed version of password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
-	user.Password = string(hashedPassword)
+	user.PasswordHash = string(hashedPassword)
 
 	// create user in db
 	query := `INSERT INTO users (email, username, role, password_hash) VALUES ($1, $2, $3, $4)`
 
-	_, err = db.Exec(query, user.Email, user.Username, user.Role, user.Password)
+	_, err = db.Exec(query, user.Email, user.Username, user.Role, user.PasswordHash)
 	if err != nil {
 		fmt.Println("error excecuting query: %w", err)
 		http.Error(w, "Error executing query", http.StatusInternalServerError)
@@ -51,9 +51,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// response successful
-	token, err := GenerateToken(uint(user.UserId))
+	token, err := GenerateToken(uint(user.UserID))
 	if err != nil {
-		fmt.Printf("error generating token (userId: %d): %v\n", user.UserId, err)
+		fmt.Printf("error generating token (userId: %d): %v\n", user.UserID, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +84,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	handleLoginProcedure(w, r, &user)
 }
 
-func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *user.User) {
+func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database.User) {
 
 	token, err := GenerateToken(uint(user.UserId))
 	if err != nil {
@@ -116,7 +116,7 @@ func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form
 			"Title":   "Login",
 		}}
 	fmt.Println("login handler ran")
-	pages.RenderLayoutTemplate(w, "loginPage", data)
+	pages.RenderLayoutTemplate(w, r, "loginPage", data)
 }
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
@@ -127,7 +127,7 @@ func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registra
 		}}
 
 	fmt.Println("registerPage handler ran")
-	pages.RenderLayoutTemplate(w, "registerPage", data)
+	pages.RenderLayoutTemplate(w, r, "registerPage", data)
 }
 
 func ServeLoginForm(w http.ResponseWriter, r *http.Request) {

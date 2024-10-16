@@ -9,7 +9,7 @@ func ServeDescriptionPage(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]string{
 			"Title": "Pact",
 		}}
-	RenderLayoutTemplate(w, "guestPage", data)
+	RenderLayoutTemplate(w, r, "guestPage", data)
 }
 func ServeDescriptionContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
@@ -39,7 +39,7 @@ func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]string{
 			"Title": "Buckets",
 		}}
-	RenderLayoutTemplate(w, "bucketsPage", data)
+	RenderLayoutTemplate(w, r, "bucketsPage", data)
 }
 func ServeBucketsContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
