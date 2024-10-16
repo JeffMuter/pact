@@ -20,7 +20,6 @@ type AssignedPunishment struct {
 type AssignedTask struct {
 	AssignedTaskID int64
 	TaskID         int64
-
 	WorkerID       int64
 	Points         int64
 	DueTime        time.Time
@@ -72,7 +71,7 @@ type User struct {
 	Username     string
 	PasswordHash string
 	Role         string
-	IsMember     bool
+	IsMember     int64
 	Points       int64
 	CreatedAt    sql.NullTime
 }

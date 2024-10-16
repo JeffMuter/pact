@@ -84,3 +84,14 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 	)
 	return i, err
 }
+
+const userIsMemberById = `-- name: UserIsMemberById :one
+SELECT is_member FROM users WHERE user_id = ?
+`
+
+func (q *Queries) UserIsMemberById(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, userIsMemberById, userID)
+	var is_member int64
+	err := row.Scan(&is_member)
+	return is_member, err
+}

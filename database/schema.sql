@@ -14,7 +14,7 @@ CREATE TABLE users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT CHECK(role IN ('manager', 'worker')) NOT NULL,
-    is_member BOOLEAN NOT NULL DEFAULT 0,
+    is_member INTEGER NOT NULL DEFAULT 0,
     points INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

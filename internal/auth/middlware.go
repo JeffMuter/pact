@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"pact/database"
 )
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -37,10 +38,19 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// determine if a member to add to context
-		isMember, err := database
+		queries := database.GetQueries()
+		ctx := context.Background()
 
+		isMember, err := queries.UserIsMemberById(ctx, int64(userID))
+
+		// if isMember == true, then we want to apply this to the context somehow?
+		if isMember == 1 {
+			ctx = context.WithValue(r.Context(), "authStatus", "member")
+		} else if userID != 0 {
+			ctx = context.WithValue(r.Context(), "authStatus", "registered")
+		}
 		// Add the user ID to the request context
-		ctx := context.WithValue(r.Context(), "userID", userID)
+		ctx = context.WithValue(r.Context(), "userID", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
