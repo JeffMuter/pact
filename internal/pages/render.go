@@ -87,7 +87,6 @@ func InitTemplates() error {
 }
 
 func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
-
 	// Retrieve and validate authStatus from context
 	authStatus, err := auth.GetAuthStatusFromContext(r.Context())
 	if err != nil {
