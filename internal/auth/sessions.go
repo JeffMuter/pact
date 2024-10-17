@@ -46,7 +46,7 @@ func SetSession(email string, w http.ResponseWriter) error {
 	if err != nil {
 		return fmt.Errorf("get user failed in setSession()")
 	}
-	session.UserId = user.UserId
+	session.UserId = int(user.UserID)
 	session.SessionToken = sessionToken
 	session.Created, session.Expires = time.Now(), time.Now().Add(time.Hour*24)
 

@@ -1,4 +1,5 @@
 -- use this to override existing tables, keep in mind, data will poof
+DROP TABLE IF EXISTS tests;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS rewards;
 DROP TABLE IF EXISTS tasks;

@@ -10,6 +10,7 @@ import (
 )
 
 func validateUsernamePassword(email string, password string) (database.User, error) {
+	fmt.Println(email + " " + password)
 	var user database.User
 
 	queries := database.GetQueries()

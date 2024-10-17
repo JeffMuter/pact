@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"pact/database"
+	"pact/internal/pages"
 
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v79"

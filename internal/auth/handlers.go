@@ -86,7 +86,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 
 func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database.User) {
 
-	token, err := GenerateToken(uint(user.UserId))
+	token, err := GenerateToken(uint(user.UserID))
 	if err != nil {
 		http.Error(w, "error generating token", http.StatusInternalServerError)
 		return

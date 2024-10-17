@@ -85,13 +85,26 @@ func InitTemplates() error {
 }
 
 func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
+	fmt.Printf("templateData authstatus: %v", data.Data["authStatus"])
 
 	// since full page loads have a navbar dependent on the auth status of the user: guest | registered | member,
 	// we'll auth the user here, and set the proper navbar
-	authStatus := r.Context().Value("authStatus").(string)
 
-	// use authStatus to add to the data, to render the proper navbar
-	data.Data["authStatus"] = authStatus
+	var authStatus string
+	authStatusValue := r.Context().Value("authStatus")
+
+	if authStatusValue == nil { // if nil, then middleware didn't assign, known guest.
+		data.Data["authStatus"] = "guest"
+	} else { // likely not guest, but type assert as context value is any
+		var ok bool
+		authStatus, ok = authStatusValue.(string)
+		if !ok {
+			// Handle the case where authStatus is not a string
+			authStatus = "guest" // or some default value
+		}
+		// now is known to be string, likely member || registered. apply it to authStatus
+		data.Data["authStatus"] = authStatus
+	}
 
 	tmpl, ok := tmplConstruct.layouts[templateName]
 	if !ok {

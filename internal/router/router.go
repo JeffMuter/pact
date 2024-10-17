@@ -32,7 +32,7 @@ func Router() *http.ServeMux {
 
 	// navbars for the different types of user authorization.
 	mux.HandleFunc("GET /guestNavbar", pages.ServeGuestNavbar)
-	mux.HandleFunc("GET /loggedInNavbar", auth.AuthMiddleware(pages.ServeLoggedInNavbar))
+	mux.HandleFunc("GET /registeredNavbar", auth.AuthMiddleware(pages.ServeRegisteredNavbar))
 	mux.HandleFunc("GET /memberNavbar", auth.AuthMiddleware(pages.ServeMemberNavbar))
 
 	// stripe
