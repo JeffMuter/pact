@@ -87,14 +87,6 @@ func InitTemplates() error {
 }
 
 func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
-	bearerCookie, err := r.Cookie("Bearer")
-	if err != nil {
-		fmt.Println("bearer cookie could not be found... not logged in")
-		http.Error(w, fmt.Sprintf("error where account should have cookie"), http.StatusInternalServerError)
-		return
-	}
-
-	val
 
 	// Retrieve and validate authStatus from context
 	authStatus, err := auth.GetAuthStatusFromContext(r.Context())

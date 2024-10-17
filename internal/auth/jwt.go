@@ -44,7 +44,7 @@ func GenerateToken(userId uint) (string, error) {
 }
 
 // ValidateToken() takes a tokenString,and validates that is hasn't expired. If expired, error.
-func ValidateToken(tokenString string) (uint, error) {
+func ValidateToken(tokenString string) (int, error) {
 	fmt.Println("validating token...")
 	fmt.Printf("token: %s\n", tokenString)
 
@@ -83,5 +83,5 @@ func ValidateToken(tokenString string) (uint, error) {
 	}
 
 	fmt.Println("token validated")
-	return uint(userId), nil
+	return int(userId), nil
 }
