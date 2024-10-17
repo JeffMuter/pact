@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"pact/database"
-	"pact/internal/db"
 	"pact/internal/pages"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,9 +12,10 @@ import (
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("registration in progress...")
-	db := db.GetDB()
+	queries := database.GetQueries()
+	ctx := context.Background()
 
-	var user database.User
+	var user database.CreateUserParams
 
 	err := r.ParseForm()
 	if err != nil {
@@ -41,19 +42,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user.PasswordHash = string(hashedPassword)
 
 	// create user in db
-	query := `INSERT INTO users (email, username, role, password_hash) VALUES ($1, $2, $3, $4)`
-
-	_, err = db.Exec(query, user.Email, user.Username, user.Role, user.PasswordHash)
-	if err != nil {
-		fmt.Println("error excecuting query: %w", err)
-		http.Error(w, "Error executing query", http.StatusInternalServerError)
-		return
-	}
+	userId, err := queries.CreateUser(ctx, user)
 
 	// response successful
-	token, err := GenerateToken(uint(user.UserID))
+	token, err := GenerateToken(uint(userId))
 	if err != nil {
-		fmt.Printf("error generating token (userId: %d): %v\n", user.UserID, err)
+		fmt.Printf("error generating token (userId: %d): %v\n", userId, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
@@ -78,6 +72,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	formPassword := r.FormValue("password")
 	user, err := validateUsernamePassword(formEmail, formPassword)
 	if err != nil {
+		fmt.Println("username & password validation failed")
 		http.Error(w, fmt.Sprintf("error validating user by email and password: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -85,12 +80,13 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database.User) {
-
+	fmt.Println("handling login procedure...")
 	token, err := GenerateToken(uint(user.UserID))
 	if err != nil {
 		http.Error(w, "error generating token", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("token generated...")
 
 	isSecure := r.TLS != nil
 	sameSite := http.SameSiteStrictMode
@@ -106,6 +102,7 @@ func handleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database
 		SameSite: sameSite,
 		Path:     "/",
 	})
+	fmt.Println("cookie set in server...")
 	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
 }
 

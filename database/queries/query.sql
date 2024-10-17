@@ -9,3 +9,6 @@ SELECT * FROM users WHERE email = ?;
 
 -- name: UserIsMemberById :one
 SELECT is_member FROM users WHERE user_id = ?;
+
+-- name: CreateUser :one
+INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) returning user_id;

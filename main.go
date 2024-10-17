@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pact/internal/db"
+	"pact/database"
 	"pact/internal/pages"
 	"pact/internal/router"
 )
 
 func main() {
-	err := db.OpenDatabase()
+	err := database.OpenDatabase()
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)
 	} else {
