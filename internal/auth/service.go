@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func validateUsernamePassword(email string, password string) (database.User, error) {
+func ValidateUsernamePassword(email string, password string) (database.User, error) {
 	fmt.Println(email + " " + password)
 	var user database.User
 
@@ -36,4 +36,23 @@ func validateUsernamePassword(email string, password string) (database.User, err
 	}
 
 	return user, nil
+}
+func GetAuthStatusFromContext(ctx context.Context) (string, error) {
+	authStatusValue := ctx.Value("authStatus")
+	if authStatusValue == nil {
+		return "guest", fmt.Errorf("authStatus not found in context")
+	}
+
+	authStatus, ok := authStatusValue.(string)
+	if !ok {
+		return "guest", fmt.Errorf("authStatus is not a string: %v", authStatusValue)
+	}
+
+	// Validate authStatus value
+	switch authStatus {
+	case "guest", "registered", "member":
+		return authStatus, nil
+	default:
+		return "guest", fmt.Errorf("invalid authStatus value: %s", authStatus)
+	}
 }

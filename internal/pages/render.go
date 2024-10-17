@@ -2,7 +2,9 @@ package pages
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"pact/internal/auth"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -85,38 +87,40 @@ func InitTemplates() error {
 }
 
 func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
-	fmt.Printf("templateData authstatus: %v", data.Data["authStatus"])
-
-	// since full page loads have a navbar dependent on the auth status of the user: guest | registered | member,
-	// we'll auth the user here, and set the proper navbar
-
-	var authStatus string
-	authStatusValue := r.Context().Value("authStatus")
-
-	if authStatusValue == nil { // if nil, then middleware didn't assign, known guest.
-		data.Data["authStatus"] = "guest"
-	} else { // likely not guest, but type assert as context value is any
-		var ok bool
-		authStatus, ok = authStatusValue.(string)
-		if !ok {
-			// Handle the case where authStatus is not a string
-			authStatus = "guest" // or some default value
-		}
-		// now is known to be string, likely member || registered. apply it to authStatus
-		data.Data["authStatus"] = authStatus
+	bearerCookie, err := r.Cookie("Bearer")
+	if err != nil {
+		fmt.Println("bearer cookie could not be found... not logged in")
+		http.Error(w, fmt.Sprintf("error where account should have cookie"), http.StatusInternalServerError)
+		return
 	}
 
+	val
+
+	// Retrieve and validate authStatus from context
+	authStatus, err := auth.GetAuthStatusFromContext(r.Context())
+	if err != nil {
+		log.Printf("Error getting authStatus: %v", err)
+		// Default to guest if there's an error
+		authStatus = "guest"
+	}
+	data.Data["authStatus"] = authStatus
+
+	log.Printf("authStatus set in template data: %v", authStatus)
+
+	// Retrieve the template
 	tmpl, ok := tmplConstruct.layouts[templateName]
 	if !ok {
+		log.Printf("Template not found: %s", templateName)
 		http.Error(w, fmt.Sprintf("The template %s does not exist.", templateName), http.StatusInternalServerError)
 		return
 	}
 
+	// Set content type and execute template
 	w.Header().Set("Content-Type", "text/html")
-
-	err := tmpl.ExecuteTemplate(w, "defaultLayout", data)
+	err = tmpl.ExecuteTemplate(w, "defaultLayout", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Error rendering page", http.StatusInternalServerError)
 	}
 }
 

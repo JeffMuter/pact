@@ -1,6 +1,7 @@
 -- use this to override existing tables, keep in mind, data will poof
 DROP TABLE IF EXISTS tests;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS rewards;
 DROP TABLE IF EXISTS tasks;
 DROP TABLE IF EXISTS punishments;
@@ -19,6 +20,17 @@ CREATE TABLE users (
     points INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Sessions table
+CREATE TABLE sessions (
+    session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 
 -- Rewards table
 CREATE TABLE rewards (

@@ -9,6 +9,27 @@ import (
 	"context"
 )
 
+const createSession = `-- name: CreateSession :exec
+INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?)
+`
+
+type CreateSessionParams struct {
+	UserID    int64
+	Token     string
+	CreatedAt string
+	ExpiresAt string
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
+	_, err := q.db.ExecContext(ctx, createSession,
+		arg.UserID,
+		arg.Token,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) returning user_id
 `

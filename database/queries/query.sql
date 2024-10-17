@@ -12,3 +12,6 @@ SELECT is_member FROM users WHERE user_id = ?;
 
 -- name: CreateUser :one
 INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) returning user_id;
+
+-- name: CreateSession :exec
+INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?);

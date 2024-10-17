@@ -21,14 +21,14 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /descriptionContent", pages.ServeDescriptionContent)
 
 	// log in
-	mux.HandleFunc("GET /loginPage", auth.ServeLoginPage)
-	mux.HandleFunc("GET /loginForm", auth.ServeLoginForm)
-	mux.HandleFunc("POST /login", auth.LoginFormHandler)
+	mux.HandleFunc("GET /loginPage", pages.ServeLoginPage)
+	mux.HandleFunc("GET /loginForm", pages.ServeLoginForm)
+	mux.HandleFunc("POST /login", pages.LoginFormHandler)
 
 	// registration
-	mux.HandleFunc("GET /registerPage", auth.ServeRegistrationPage)
-	mux.HandleFunc("GET /registerForm", auth.ServeRegistrationForm)
-	mux.HandleFunc("POST /register", auth.RegisterHandler)
+	mux.HandleFunc("GET /registerPage", pages.ServeRegistrationPage)
+	mux.HandleFunc("GET /registerForm", pages.ServeRegistrationForm)
+	mux.HandleFunc("POST /register", pages.RegisterHandler)
 
 	// navbars for the different types of user authorization.
 	mux.HandleFunc("GET /guestNavbar", pages.ServeGuestNavbar)

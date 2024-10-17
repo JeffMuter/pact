@@ -44,6 +44,14 @@ type Reward struct {
 	PointCost   int64
 }
 
+type Session struct {
+	SessionID int64
+	UserID    int64
+	Token     string
+	CreatedAt string
+	ExpiresAt string
+}
+
 type Task struct {
 	TaskID          int64
 	ManagerID       int64
