@@ -40,7 +40,11 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 						authStatus = "registered"
 					}
 				}
+			} else {
+				http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
 			}
+		} else {
+			http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
 		}
 
 		// Always set the authStatus and userID in the context
