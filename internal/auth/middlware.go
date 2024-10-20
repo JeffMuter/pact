@@ -42,6 +42,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 				}
 			} else {
 				http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
+
 			}
 		} else {
 			http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
