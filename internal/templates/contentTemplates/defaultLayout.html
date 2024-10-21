@@ -12,12 +12,12 @@
 
 
 <body>
-  {{ if eq .Data.AuthStatus "guest" }}
-  {{ template "guestNavbar" . }}
-  {{ else if eq .Data.AuthStatus "registered" }}
+  {{ if eq .Data.AuthStatus "registered" }}
   {{ template "registeredNavbar" . }}
   {{ else if eq .Data.AuthStatus "member" }}
   {{ template "memberNavbar" . }}
+  {{ else }}
+  {{ template "guestNavbar" . }}
   {{ end }}
   <main id="mainElement" class="px-4 py-6 bg-zinc-950 text-white">
     {{ block "content" . }}{{ end }}

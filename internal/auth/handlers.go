@@ -32,3 +32,7 @@ func HandleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database
 	fmt.Println("cookie set in server...")
 	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
 }
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+
+}

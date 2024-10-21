@@ -94,7 +94,7 @@ func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName s
 		// Default to guest if there's an error
 		authStatus = "guest"
 	}
-	data.Data["authStatus"] = authStatus
+	data.Data["AuthStatus"] = authStatus
 
 	log.Printf("authStatus set in template data: %v", authStatus)
 

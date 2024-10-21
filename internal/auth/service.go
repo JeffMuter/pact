@@ -56,3 +56,7 @@ func GetAuthStatusFromContext(ctx context.Context) (string, error) {
 		return "guest", fmt.Errorf("invalid authStatus value: %s", authStatus)
 	}
 }
+
+func LogoutHandler() error {
+
+}
