@@ -10,20 +10,21 @@ import (
 )
 
 func main() {
+	// open database
 	err := database.OpenDatabase()
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)
-	} else {
-		fmt.Println("db opened...")
 	}
 
-	// Initialize templates
+	fmt.Println("db opened...")
+
+	// Initialize templates in local memory
 	err = pages.InitTemplates()
 	if err != nil {
 		log.Fatalf("Failed to initialize templates: %v", err)
-	} else {
-		fmt.Println("templates initialized...")
 	}
+
+	fmt.Println("templates initialized...")
 
 	// Setup route
 	r := router.Router()
