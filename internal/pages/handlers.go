@@ -163,3 +163,23 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func ServeAccountPage(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Data: map[string]string{
+			"Heading": "Account Page",
+			"Title":   "Account Page",
+		},
+	}
+	RenderLayoutTemplate(w, r, "accountPage", data)
+}
+
+func ServeAccountContent(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Data: map[string]string{
+			"Heading": "Account Page",
+			"Title":   "Account Page",
+		},
+	}
+	RenderLayoutTemplate(w, r, "accountContent", data)
+}
