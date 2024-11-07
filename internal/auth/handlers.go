@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"pact/database"
+	"time"
 )
 
 func HandleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database.User) {
@@ -28,11 +29,25 @@ func HandleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database
 		Secure:   isSecure,
 		SameSite: sameSite,
 		Path:     "/",
+		Expires:  time.Now().Add(24 * time.Hour),
 	})
 	fmt.Println("cookie set in server...")
 	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
 }
 
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+// Logout is a handler meant to alter the cookie to expire it, and reroute the user to a
+// full rerender of the login page.
+func Logout(w http.ResponseWriter, r *http.Request) {
+	// create a cookie called 'Bearer', set it in the past to invalidate it. overwriting a good cookie
+	cookie := &http.Cookie{
+		Name:     "Bearer",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-1 * time.Hour), // Set to past time
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
 
+	// redirect to login page.
+	http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
 }

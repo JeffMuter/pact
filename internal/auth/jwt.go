@@ -46,7 +46,6 @@ func GenerateToken(userId uint) (string, error) {
 // ValidateToken() takes a tokenString,and validates that is hasn't expired. If expired, error.
 func ValidateToken(tokenString string) (int, error) {
 	fmt.Println("validating token...")
-	fmt.Printf("token: %s\n", tokenString)
 
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
