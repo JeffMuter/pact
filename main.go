@@ -8,7 +8,7 @@ import (
 	"pact/internal/pages"
 	"pact/internal/router"
 )
-source ~/.bashrc
+
 func main() {
 	// open database
 	err := database.OpenDatabase()
