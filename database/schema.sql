@@ -1,6 +1,8 @@
 -- use this to override existing tables, keep in mind, data will poof
-DROP TABLE IF EXISTS tests;
+DROP TABLE IF EXISTS test;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS connections;
+DROP TABLE IF EXISTS connection_requests;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS rewards;
 DROP TABLE IF EXISTS tasks;
@@ -19,6 +21,24 @@ CREATE TABLE users (
     is_member INTEGER NOT NULL DEFAULT 0,
     points INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE connections (
+    connection_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    manager_id INTEGER NOT NULL,
+    worker_id INTEGER NOT NULL,
+    UNIQUE(manager_id, worker_id),
+    FOREIGN KEY (manager_id) REFERENCES users(user_id),
+    FOREIGN KEY (worker_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE connection_requests (
+    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    manager_id INTEGER NOT NULL,
+    worker_id INTEGER NOT NULL,
+    is_active INTEGER NOT NULL,
+    FOREIGN KEY (manager_id) REFERENCES users(user_id),
+    FOREIGN KEY (worker_id) REFERENCES users(user_id)
 );
 
 -- Sessions table

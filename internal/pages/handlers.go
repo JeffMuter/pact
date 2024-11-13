@@ -181,5 +181,5 @@ func ServeAccountContent(w http.ResponseWriter, r *http.Request) {
 			"Title":   "Account Page",
 		},
 	}
-	RenderLayoutTemplate(w, r, "accountContent", data)
+	RenderTemplateFraction(w, "accountContent", data)
 }

@@ -1,0 +1,22 @@
+{{ define "connections" }}
+
+<h1>Connections</h1>
+
+<!-- send req form, type in email -->
+<form hx-post="/sendConnectionRequest" hx-target="body" hx-swap="innerHTML">
+	<h3 class="mb-4">
+		Send Connection Request:
+	</h3>
+	<label class="mb-2">Email</label><br>
+	<input class="mb-8" type="text" name="email">
+	<button type="submit">Send</button>
+</form>
+<!-- current connection, or status of no connection -->
+<h3 class="mb-8">Current Connection:</h3>
+<!-- if requests exist, they should list here. optionally delete or accept them as 2 buttons -->
+<h3 class="mb-8">Connection Requests:</h3>
+{ range .Requests }
+<li>{{ .Data.Requests }}</li>
+{{ end }}
+
+{{ end }}
