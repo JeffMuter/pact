@@ -15,3 +15,9 @@ INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) ret
 
 -- name: CreateSession :exec
 INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?);
+
+-- name: CreateRequest :exec
+INSERT INTO connectionRequests (manager_id, worker_id) VALUES (?, ?);
+
+-- name: GetUserByEmail :one
+SELECT * FROM users WHERE email = ?;
