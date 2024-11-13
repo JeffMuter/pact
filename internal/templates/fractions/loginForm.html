@@ -4,16 +4,16 @@
 	<form hx-post="/login" hx-target="body" hx-swap="innerHTML"
 		hx-on::after-request="if(event.detail.successful) htmx.ajax('GET', '/loggedInNav', {target:'#navbar', swap:'outerHTML'})">
 		<label for="email">Email</label>
-		<input type="text" id="email" name="email" required placeholder="Enter your email">
+		<input type="text" id="email" name="email" required placeholder="Enter your email" class="text-black">
 
 		<label for="password">Password</label>
 		<input type="password" id="password" name="password" required placeholder="Enter your password"
-			autocomplete="off">
+			autocomplete="off" class="text-black">
 
 		<button type="submit">Login</button>
 	</form>
-	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="outerHTML" hx-push-url="registerPage"
-		href="#">Not
-		a user? Register Here...</a>
+	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="outerHTML" hx-push-url="registerPage" href="#">
+		Not a user? Register Here...
+	</a>
 </section>
 {{ end }}

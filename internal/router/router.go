@@ -30,7 +30,7 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /registerForm", pages.ServeRegistrationForm)
 	mux.HandleFunc("POST /register", pages.RegisterHandler)
 
-	mux.HandleFunc("DELETE /logout", auth.Logout)
+	mux.HandleFunc("GET /logout", auth.Logout)
 
 	// navbars for the different types of user authorization.
 	mux.HandleFunc("GET /guestNavbar", pages.ServeGuestNavbar)

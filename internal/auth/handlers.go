@@ -38,14 +38,18 @@ func HandleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database
 // Logout is a handler meant to alter the cookie to expire it, and reroute the user to a
 // full rerender of the login page.
 func Logout(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("logging out begin...")
 	// create a cookie called 'Bearer', set it in the past to invalidate it. overwriting a good cookie
 	cookie := &http.Cookie{
 		Name:     "Bearer",
 		Value:    "",
 		Path:     "/",
-		Expires:  time.Now().Add(-1 * time.Hour), // Set to past time
+		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
 	}
+	fmt.Println("logout cookie MaxAge set -1")
 	http.SetCookie(w, cookie)
 
 	// redirect to login page.
