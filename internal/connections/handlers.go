@@ -1,11 +1,11 @@
-package relationships
+package connections
 
 import (
 	"net/http"
 	"pact/internal/pages"
 )
 
-func ServePageContent(w http.ResponseWriter, r *http.Request) {
+func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	data := pages.TemplateData{
 		Data: map[string]string{
 			"Title": "Relationships",

@@ -15,8 +15,15 @@
 <h3 class="mb-8">Current Connection:</h3>
 <!-- if requests exist, they should list here. optionally delete or accept them as 2 buttons -->
 <h3 class="mb-8">Connection Requests:</h3>
-{ range .Requests }
-<li>{{ .Data.Requests }}</li>
+
+{{ range .Data.Requests }}
+<li class="flex justify-between">
+	<h4>{{ .Name }}</h4>
+	<!-- TODO: hx-post here -->
+	<button>Accept</button>
+	<!-- TODO: hx-delete here -->
+	<button>Reject</button>
+</li>
 {{ end }}
 
 {{ end }}

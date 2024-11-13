@@ -1,1 +1,1 @@
-package relationships
+package connections
