@@ -29,6 +29,19 @@ type AssignedTask struct {
 	CompletedAt    sql.NullTime
 }
 
+type Connection struct {
+	ConnectionID int64
+	ManagerID    int64
+	WorkerID     int64
+}
+
+type ConnectionRequest struct {
+	RequestID  int64
+	SenderID   int64
+	RecieverID int64
+	IsActive   int64
+}
+
 type Punishment struct {
 	PunishmentID int64
 	ManagerID    int64

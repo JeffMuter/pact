@@ -9,6 +9,20 @@ import (
 	"context"
 )
 
+const createRequest = `-- name: CreateRequest :exec
+INSERT INTO connection_requests (sender_id, reciever_id) VALUES (?, ?)
+`
+
+type CreateRequestParams struct {
+	SenderID   int64
+	RecieverID int64
+}
+
+func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) error {
+	_, err := q.db.ExecContext(ctx, createRequest, arg.SenderID, arg.RecieverID)
+	return err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?)
 `

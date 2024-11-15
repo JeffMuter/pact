@@ -34,8 +34,8 @@ CREATE TABLE connections (
 
 CREATE TABLE connection_requests (
     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    manager_id INTEGER NOT NULL,
-    worker_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    reciever_id INTEGER NOT NULL,
     is_active INTEGER NOT NULL,
     FOREIGN KEY (manager_id) REFERENCES users(user_id),
     FOREIGN KEY (worker_id) REFERENCES users(user_id)

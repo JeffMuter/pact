@@ -6,6 +6,7 @@ import (
 )
 
 func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
+	// should have a user id added in the context of this req here. lets check
 	// got get list of requests.
 
 	// go get connections, if existing, if not, need to know.
