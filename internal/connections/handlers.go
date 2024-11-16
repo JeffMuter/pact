@@ -14,7 +14,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 
 	data := pages.TemplateData{
 		Data: map[string]string{
-			"Title": "Relationships",
+			"Title": "Connection",
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
