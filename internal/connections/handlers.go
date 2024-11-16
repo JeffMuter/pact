@@ -1,6 +1,7 @@
 package connections
 
 import (
+	"fmt"
 	"net/http"
 	"pact/internal/pages"
 )
@@ -17,4 +18,19 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
+}
+
+func HandleCreateRequest(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "error parsing form", http.StatusBadRequest)
+		return
+	}
+	formEmail := r.FormValue("email")
+
+	userId := r.Context().Value("userID").(int)
+
+	fmt.Println(userId)
+
+	AddRequest(userId, formEmail)
 }

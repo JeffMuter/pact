@@ -6,10 +6,10 @@ import (
 	"pact/database"
 )
 
+// AddRequest takes in the current users id, and the email they submitted to
+// attempt sending a request. If it fails, we do not error, the user does not
+// need to know that email is or isnt in our database
 func AddRequest(userId int, email string) {
-	// try to get the user based on the email.
-	// if cant find the user, idc just log it
-	// add the new details about both users to the connection_requests table
 
 	queries := database.GetQueries()
 	ctx := context.Background()
@@ -26,5 +26,4 @@ func AddRequest(userId int, email string) {
 
 	// add this new req to db.
 	queries.CreateRequest(ctx, args)
-
 }
