@@ -1,4 +1,24 @@
 {{ define "buckets" }}
 <h1>Buckets</h1>
-<div id="bucketContainer" class="flex"></div>
+<section class="flex bg-red p-4 flex flex-col">
+	<h3>Todo</h3>
+	<ul>
+		<!-- for loop starts here over li -->
+		<li class="cursor-pointer bg-gray-400">
+			<h4>test title</h4>
+		</li>
+	</ul>
+</section>
+
+<section>
+	<h3>In-Review</h3>
+</section>
+
+<section>
+	<h3>Completed</h3>
+</section>
+
+<section>
+	<h3>Failed</h3>
+</section>
 {{ end }}
