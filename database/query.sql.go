@@ -143,6 +143,42 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 	return i, err
 }
 
+const getUserPendingRequests = `-- name: GetUserPendingRequests :many
+SELECT connection_requests.request_id, users.email
+FROM connection_requests
+JOIN users ON connection_requests.sender_id = users.user_id
+WHERE connection_requests.is_active = 1
+AND connection_requests.reciever_id = ?
+`
+
+type GetUserPendingRequestsRow struct {
+	RequestID int64
+	Email     string
+}
+
+func (q *Queries) GetUserPendingRequests(ctx context.Context, recieverID int64) ([]GetUserPendingRequestsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserPendingRequests, recieverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserPendingRequestsRow
+	for rows.Next() {
+		var i GetUserPendingRequestsRow
+		if err := rows.Scan(&i.RequestID, &i.Email); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const userIsMemberById = `-- name: UserIsMemberById :one
 SELECT is_member FROM users WHERE user_id = ?
 `
