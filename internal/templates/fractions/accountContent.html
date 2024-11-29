@@ -1,7 +1,6 @@
 {{ define "accountContent" }}
 
 <h1>Account Content Goes here</h1>
-
-<button hx-get="connectionsContent">Connection Info & Requests</button>
+<button hx-get="connectionsContent" hx-target="#mainElement" hx-sqap="innerHTML">Connection Info & Requests</button>
 
 {{ end }}

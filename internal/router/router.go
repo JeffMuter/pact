@@ -48,7 +48,7 @@ func Router() *http.ServeMux {
 
 	// connections
 	mux.HandleFunc("GET /connectionsContent", auth.AuthMiddleware(connections.ServeConnectionsContent))
-	mux.HandleFunc("POST /createConnectionRequest", auth.AuthMiddleware(connections.HandleCreateRequest))
+	mux.HandleFunc("POST /createConnectionRequest", auth.AuthMiddleware(connections.HandleCreateConnectionRequest))
 
 	// Serve static files
 	fileServer := http.FileServer(http.Dir("static"))
