@@ -1,19 +1,24 @@
 {{ define "loginForm" }}
-<section id="form-container" class="flex">
-	<h2>Login</h2>
+<section id="form-container" class="flex flex-col  bg-gray-900 text-emerald-600 rounded-lg p-4">
+	<h2 class="text-xl mb-8">Login</h2>
 	<form hx-post="/login" hx-target="body" hx-swap="innerHTML"
-		hx-on::after-request="if(event.detail.successful) htmx.ajax('GET', '/loggedInNav', {target:'#navbar', swap:'outerHTML'})">
+		hx-on::after-request="if(event.detail.successful) htmx.ajax('GET', '/loggedInNav', {target:'#navbar', swap:'outerHTML'})"
+		class="flex flex-col gap-4">
 		<label for="email">Email</label>
-		<input type="text" id="email" name="email" required placeholder="Enter your email" class="text-black">
+		<input type="text" id="email" name="email" required placeholder="Enter your email"
+			class="p-2 bg-black rounded-md text-black">
 
 		<label for="password">Password</label>
 		<input type="password" id="password" name="password" required placeholder="Enter your password"
-			autocomplete="off" class="text-black">
+			autocomplete="off" class="p-2 bg-black rounded-md text-black">
 
-		<button type="submit">Login</button>
+		<button class="btn rounded text-emerald-600 p-2 duration-300 border-0 hover:border hover:border-emerald-400 hover:bg-black bg-transparent w-16 text-left"
+			type="submit">Login</button>
+
+		<a hx-get="/registerForm" hx-target="#form-container" hx-swap="outerHTML" hx-push-url="registerPage"
+			href="#">
+			Not a user? Register Here...
+		</a>
 	</form>
-	<a hx-get="/registerForm" hx-target="#form-container" hx-swap="outerHTML" hx-push-url="registerPage" href="#">
-		Not a user? Register Here...
-	</a>
 </section>
 {{ end }}

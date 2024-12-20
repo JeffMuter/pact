@@ -26,7 +26,7 @@ func main() {
 
 	fmt.Println("templates initialized...")
 
-	// Setup route
+	// Setup router
 	r := router.Router()
 
 	// Start server
