@@ -72,7 +72,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 
 func ServeMembershipPage(w http.ResponseWriter, r *http.Request) {
 	data := pages.TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Membership",
 		}}
 	fmt.Println("membership page handler ran")
@@ -147,7 +147,7 @@ func ServeStripeForm(w http.ResponseWriter, r *http.Request) {
 	publishableId := os.Getenv("STRIPE_PUBLISHABLE_KEY")
 	fmt.Println("serve stripe form publishable id: " + publishableId)
 	data := pages.TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title":                "Membership",
 			"StripePublishableKey": publishableId,
 		},

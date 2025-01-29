@@ -23,7 +23,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := pages.TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title":                     "Connection",
 			"PendingConnectionRequests": rows,
 		},

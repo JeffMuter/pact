@@ -42,6 +42,9 @@ func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingReq
 	if err != nil {
 		return pendingRequestData, fmt.Errorf("error getting pending request info by the given userId: %d, %w\n", userId, err)
 	}
+	for _, row := range pendingRequestData {
+		fmt.Printf("rowdata: %v\n", row)
+	}
 
 	return pendingRequestData, nil
 }

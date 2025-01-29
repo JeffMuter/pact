@@ -12,14 +12,14 @@ import (
 
 func ServeDescriptionPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Pact",
 		}}
 	RenderLayoutTemplate(w, r, "guestPage", data)
 }
 func ServeDescriptionContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Pact",
 		}}
 	RenderTemplateFraction(w, "guest", data)
@@ -42,21 +42,21 @@ func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
 
 func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Buckets",
 		}}
 	RenderLayoutTemplate(w, r, "bucketsPage", data)
 }
 func ServeBucketsContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Buckets",
 		}}
 	RenderTemplateFraction(w, "buckets", data)
 }
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form page
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Login",
 			"Title":   "Login",
 		}}
@@ -66,7 +66,7 @@ func ServeLoginPage(w http.ResponseWriter, r *http.Request) { // show login form
 
 func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registration form page
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Registration Page",
 			"Title":   "Register",
 		}}
@@ -77,7 +77,7 @@ func ServeRegistrationPage(w http.ResponseWriter, r *http.Request) { // registra
 
 func ServeLoginForm(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Login Page",
 		}}
 
@@ -87,7 +87,7 @@ func ServeLoginForm(w http.ResponseWriter, r *http.Request) {
 
 func ServeRegistrationForm(w http.ResponseWriter, r *http.Request) { // registration form page
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Registration Page",
 		}}
 
@@ -166,7 +166,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 func ServeAccountPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Account Page",
 			"Title":   "Account Page",
 		},
@@ -176,7 +176,7 @@ func ServeAccountPage(w http.ResponseWriter, r *http.Request) {
 
 func ServeAccountContent(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Heading": "Account Page",
 			"Title":   "Account Page",
 		},

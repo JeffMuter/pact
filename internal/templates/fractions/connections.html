@@ -16,9 +16,9 @@
 <!-- if requests exist, they should list here. optionally delete or accept them as 2 buttons -->
 <h3 class="mb-8">Connection Requests:</h3>
 
-{{ range .Data.Requests }}
+{{ range .Data.PendingConnectionRequests }}
 <li class="flex justify-between">
-	<h4>{{ .Name }}</h4>
+	<h4>{{ .Email }}</h4>
 	<!-- TODO: hx-post here -->
 	<button>Accept</button>
 	<!-- TODO: hx-delete here -->
