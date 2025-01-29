@@ -15,7 +15,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connections failed...: %v", err)
 	}
-
 	fmt.Println("db opened...")
 
 	// Initialize templates in local memory

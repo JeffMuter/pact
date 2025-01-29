@@ -12,11 +12,20 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 
 	// connection requests added to data here...
 	userId := r.Context().Value("userID").(int)
-	getUsersPendingConnectionRequests(userId)
+	if userId < 1 {
+		fmt.Printf("userID not found in ctx, not good... userId: %v\n", userId)
+		http.Error(w, "no userID in context of request", http.StatusUnauthorized)
+		return
+	}
+	rows, err := getUsersPendingConnectionRequests(userId)
+	if err != nil {
+		fmt.Println("issue with row returned for connections content")
+	}
 
 	data := pages.TemplateData{
 		Data: map[string]string{
-			"Title": "Connection",
+			"Title":                     "Connection",
+			"PendingConnectionRequests": rows,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)

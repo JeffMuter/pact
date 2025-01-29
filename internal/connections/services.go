@@ -33,8 +33,8 @@ func CreateConnectionRequest(userId int, email string) error {
 	return nil
 }
 
+// getUsersPendingConnectionRequests fetches all the information of open/ non accepted or declined connections to return
 func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingRequestsRow, error) {
-
 	queries := database.GetQueries()
 	ctx := context.Background()
 
