@@ -67,6 +67,20 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 	return user_id, err
 }
 
+const deleteConnectionRequestByUserIds = `-- name: DeleteConnectionRequestByUserIds :exec
+DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?
+`
+
+type DeleteConnectionRequestByUserIdsParams struct {
+	SenderID   int64
+	RecieverID int64
+}
+
+func (q *Queries) DeleteConnectionRequestByUserIds(ctx context.Context, arg DeleteConnectionRequestByUserIdsParams) error {
+	_, err := q.db.ExecContext(ctx, deleteConnectionRequestByUserIds, arg.SenderID, arg.RecieverID)
+	return err
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
 select user_id, email, username, password_hash, role, is_member, points, created_at from users
 `
