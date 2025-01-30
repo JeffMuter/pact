@@ -22,7 +22,7 @@
 	<!-- TODO: hx-post here -->
 	<button>Accept</button>
 	<!-- TODO: hx-delete here -->
-	<button>Reject</button>
+	<button hx-delete="/deleteConnectionRequest\{{ .User.RecieverId }}\{{ .User.SenderId }}">Reject</button>
 </li>
 {{ end }}
 

@@ -20,7 +20,7 @@ INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?);
 INSERT INTO connection_requests (sender_id, reciever_id) VALUES (?, ?);
 
 -- name: GetUserPendingRequests :many
-SELECT connection_requests.request_id, users.email
+SELECT connection_requests.request_id, users.email, connection_requests.sender_id, connection_requests.reciever_id
 FROM connection_requests
 JOIN users ON connection_requests.sender_id = users.user_id
 WHERE connection_requests.is_active = 1
