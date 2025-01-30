@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"pact/internal/pages"
+	"strconv"
 )
 
 func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
@@ -18,8 +19,12 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows, err := getUsersPendingConnectionRequests(userId)
-	if err != nil {
+	if len(rows) == 0 {
 		fmt.Println("issue with row returned for connections content")
+		http.Error(w, "no rows found for pending connection requests\n", http.StatusNotFound)
+	}
+	if err != nil {
+		http.Error(w, "error getting pending requests: %v\n", http.StatusInternalServerError)
 	}
 
 	data := pages.TemplateData{
@@ -48,5 +53,30 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	err = CreateConnectionRequest(userId, formEmail)
 	if err != nil {
 		fmt.Printf("error creating connection request: %v\n", err)
+		return
 	}
+	// no errs, all done
+	w.WriteHeader(200)
+}
+
+// HandleDeleteConnectionRequest parses the request url to get the sender and reciever id's for the sql query we need to make to delete the connection request
+func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
+	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
+	if err != nil {
+		http.Error(w, "error, url sender_id was not an int\n", http.StatusBadRequest)
+		return
+	}
+	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
+	if err != nil {
+		http.Error(w, "error, url reciever_id was not an int\n", http.StatusBadRequest)
+		return
+	}
+	err = deleteConnectionRequest(senderId, recieverId)
+	if err != nil {
+		msg := fmt.Sprintf("error, deleting connection request failed: %v\n", err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)
 }

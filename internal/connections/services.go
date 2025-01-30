@@ -48,3 +48,13 @@ func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingReq
 
 	return pendingRequestData, nil
 }
+
+// deleteConnectionRequest uses senderId and recieverId to delete any pending requests matching the sender and reciever fields of connection_requests table
+func deleteConnectionRequest(senderId, recieverId int) error {
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	// TODO: use generated delete here!
+
+	return nil
+}

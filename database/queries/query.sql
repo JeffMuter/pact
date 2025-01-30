@@ -25,3 +25,6 @@ FROM connection_requests
 JOIN users ON connection_requests.sender_id = users.user_id
 WHERE connection_requests.is_active = 1
 AND connection_requests.reciever_id = ?;
+
+-- name: DeleteConnectionRequestByUserIds :exec
+DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?
