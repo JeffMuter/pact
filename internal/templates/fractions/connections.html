@@ -17,7 +17,7 @@
 {{ range .Data.PendingConnectionRequests }}
 <li class="flex justify-between">
 	<h4>{{ .Email }}</h4>
-	<button hx-post="/acceptConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
+	<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
 	<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}">Reject</button>
 </li>
 {{ end }}

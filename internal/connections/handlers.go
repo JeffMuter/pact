@@ -80,3 +80,7 @@ func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 }
+
+func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+}
