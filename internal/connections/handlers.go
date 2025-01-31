@@ -20,8 +20,8 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := getUsersPendingConnectionRequests(userId)
 	if len(rows) == 0 {
-		fmt.Println("issue with row returned for connections content")
-		// not convinced we need to error here. Perfectly valid that there may be no active pending requests
+		// worth seeing for debugging. but no error here.
+		fmt.Println("no pending connections...")
 	}
 	if err != nil {
 		http.Error(w, "error getting pending requests: %v\n", http.StatusInternalServerError)
