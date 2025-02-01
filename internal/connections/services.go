@@ -69,6 +69,8 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 }
 
 func createConnection(senderId, recieverId int) error {
+	fmt.Println("begin to create connection from user ids")
+
 	var managerUserId, workerUserId int
 
 	queries := database.GetQueries()
@@ -109,10 +111,19 @@ func createConnection(senderId, recieverId int) error {
 	args.ManagerID = int64(managerUserId)
 	args.WorkerID = int64(workerUserId)
 
+	// create connection
 	err = queries.CreateConnection(ctx, args)
 	if err != nil {
 		return fmt.Errorf("create connection query failed: %w", err)
 	}
+
+	// this code wont run unless connection creation success
+	// delete connection request
+	err = deleteConnectionRequest(senderId, recieverId)
+	if err != nil {
+		fmt.Printf("deleting connection request failed, after connection successfully created: %v\n", err)
+	}
+	fmt.Println("connection created. request successfully deleted")
 
 	return nil
 }
