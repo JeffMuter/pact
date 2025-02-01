@@ -3,10 +3,8 @@
 <h1>Connections</h1>
 
 <!-- send req form, type in email -->
-<form hx-post="/createConnectionRequest" hx-target="body" hx-swap="innerHTML">
-	<h3 class="mb-4">
-		Send Connection Request:
-	</h3>
+<form hx-post="/createConnectionRequest">
+	<h3 class="mb-4">Send Connection Request:</h3>
 	<label class="mb-2">Email</label><br>
 	<input class="mb-8 text-black" type="text" name="email">
 	<button type="submit">Send</button>
@@ -19,9 +17,7 @@
 {{ range .Data.PendingConnectionRequests }}
 <li class="flex justify-between">
 	<h4>{{ .Email }}</h4>
-	<!-- TODO: hx-post here -->
-	<button>Accept</button>
-	<!-- TODO: hx-delete here -->
+	<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
 	<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}">Reject</button>
 </li>
 {{ end }}
