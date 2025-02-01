@@ -51,7 +51,7 @@ func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingReq
 
 // deleteConnectionRequest uses senderId and recieverId to delete any pending requests matching the sender and reciever fields of connection_requests table
 func deleteConnectionRequest(senderId, recieverId int) error {
-	fmt.Println("senderId: %v... recieverId: %v...\n", senderId, recieverId)
+	fmt.Printf("senderId: %v... recieverId: %v...\n", senderId, recieverId)
 
 	queries := database.GetQueries()
 	ctx := context.Background()
@@ -69,10 +69,50 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 }
 
 func createConnection(senderId, recieverId int) error {
+	var managerUserId, workerUserId int
+
 	queries := database.GetQueries()
 	ctx := context.Background()
 
-	// TODO: run query to create connection, and then delete connection request here.
+	// get sender and reciever user values from the db from the ids recieved from params
+	senderUser, err := queries.GetUserById(ctx, int64(senderId))
+	if err != nil {
+		return fmt.Errorf("could not find connection request sender by their id in db: %w", err)
+	}
+
+	recieverUser, err := queries.GetUserById(ctx, int64(recieverId))
+	if err != nil {
+		return fmt.Errorf("user could not be found in db from the connection request recievers id: %w", err)
+	}
+
+	// set manager & worker id values, and do some error detection
+	if senderUser.Role == recieverUser.Role {
+		return fmt.Errorf("connection request sender & reciever are the same role. A role combination we do no support.")
+	}
+	if senderUser.Role == "manager" {
+		managerUserId = senderId
+	} else if senderUser.Role == "worker" {
+		workerUserId = senderId
+	} else {
+		return fmt.Errorf("sender user was found, but their role type is invalid...")
+	}
+
+	if recieverUser.Role == "manager" && managerUserId == 0 {
+		managerUserId = recieverId
+	} else if recieverUser.Role == "worker" && workerUserId == 0 {
+		workerUserId = recieverId
+	} else {
+		return fmt.Errorf("reciever and sender users were found. reciever role was probably invalid")
+	}
+
+	var args database.CreateConnectionParams
+	args.ManagerID = int64(managerUserId)
+	args.WorkerID = int64(workerUserId)
+
+	err = queries.CreateConnection(ctx, args)
+	if err != nil {
+		return fmt.Errorf("create connection query failed: %w", err)
+	}
 
 	return nil
 }
