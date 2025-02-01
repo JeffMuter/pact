@@ -67,3 +67,12 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 
 	return nil
 }
+
+func createConnection(senderId, recieverId int) error {
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	// TODO: run query to create connection, and then delete connection request here.
+
+	return nil
+}

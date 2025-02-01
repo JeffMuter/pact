@@ -1,5 +1,5 @@
 -- name: GetAllUsers :many
-select * from users;
+SELECT * FROM users;
 
 -- name: GetUserById :one
 SELECT * from users WHERE user_id = ?;
@@ -27,4 +27,7 @@ WHERE connection_requests.is_active = 1
 AND connection_requests.reciever_id = ?;
 
 -- name: DeleteConnectionRequestByUserIds :exec
-DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?
+DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?;
+
+-- name: CreateConnection :exec
+INSERT INTO connections (manager_id, worker_id) VALUES (?, ?);

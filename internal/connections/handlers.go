@@ -80,3 +80,21 @@ func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 }
+
+func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
+	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
+	if err != nil {
+		fmt.Errorf("senderId value not a number in create-connection request: %w", err)
+	}
+	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
+	if err != nil {
+		fmt.Errorf("recieverId non a number from create connection request: %w", err)
+	}
+
+	err = createConnection(senderId, recieverId)
+	if err != nil {
+		fmt.Errorf("context: %w", err)
+	}
+
+	w.WriteHeader(200)
+}
