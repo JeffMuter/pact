@@ -64,7 +64,7 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "sender role not recieved...", http.StatusBadRequest)
 		return
 	}
-	if senderRole != "manager" || senderRole != "worker" {
+	if senderRole != "manager" && senderRole != "worker" {
 		fmt.Printf("sender role form value is invalid. Role recieved: %s\n", senderRole)
 		http.Error(w, "sender role form value is invalid. Role recieved: %s\n", http.StatusBadRequest)
 		return
