@@ -44,7 +44,7 @@ CREATE TABLE connection_requests (
     FOREIGN KEY (suggested_manager_id) REFERENCES users(user_id),
     FOREIGN KEY (suggested_worker_id) REFERENCES users(user_id),
     CHECK (sender_id != reciever_id),
-    CHECK (suggester_manager_id != suggested_worker_id),
+    CHECK (suggested_manager_id != suggested_worker_id),
     CHECK (
         (sender_id IN (suggested_manager_id, suggested_worker_id)) AND
         (reciever_id IN (suggested_manager_id, suggested_worker_id))
