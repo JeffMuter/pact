@@ -9,28 +9,41 @@ import (
 // AddRequest takes in the current users id, and the email they submitted to
 // attempt sending a request. If it fails, we do not error, the user does not
 // need to know that email is or isnt in our database
-func CreateConnectionRequest(userId int, email string) error {
+func CreateConnectionRequest(userId int, senderRole, email string) error {
 
 	queries := database.GetQueries()
 	ctx := context.Background()
 
-	user, err := queries.GetUserByEmail(ctx, email)
+	recieverUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		fmt.Println("couldnt get user by email")
 		return fmt.Errorf("error couldnt find existing user via their email: %w\n", err)
 	}
 
+	var suggestedManager, suggestedWorker int
+
+	if senderRole == "manager" {
+		suggestedManager = userId
+		suggestedWorker = int(recieverUser.UserID)
+	}
+	if senderRole == "worker" {
+		suggestedManager = int(recieverUser.UserID)
+		suggestedWorker = userId
+	}
+
 	var args database.CreateRequestParams
 	args.SenderID = int64(userId)
-	args.RecieverID = user.UserID
-	args.
+	args.RecieverID = recieverUser.UserID
+	args.SuggestedManagerID = int64(suggestedManager)
+	args.SuggestedWorkerID = int64(suggestedWorker)
 
-		// add this new req to db.
-		err = queries.CreateRequest(ctx, args)
+	// add this new req to db.
+	err = queries.CreateRequest(ctx, args)
 	if err != nil {
 		fmt.Printf("error creating request from email senderID: %d, recieverId: %d\n", args.SenderID, args.RecieverID)
 		return fmt.Errorf("error couldnt find existing user via their email: %w\n", err)
 	}
+
 	return nil
 }
 

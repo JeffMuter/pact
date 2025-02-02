@@ -51,15 +51,28 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error parsing form", http.StatusBadRequest)
 		return
 	}
+
 	formEmail := r.FormValue("email")
 	if len(formEmail) == 0 {
 		http.Error(w, "Email input was empty", http.StatusBadRequest)
 		return
 	}
 
+	senderRole := r.FormValue("senderRole")
+	if len(senderRole) == 0 {
+		fmt.Println("sender role not recieved...")
+		http.Error(w, "sender role not recieved...", http.StatusBadRequest)
+		return
+	}
+	if senderRole != "manager" || senderRole != "worker" {
+		fmt.Printf("sender role form value is invalid. Role recieved: %s\n", senderRole)
+		http.Error(w, "sender role form value is invalid. Role recieved: %s\n", http.StatusBadRequest)
+		return
+	}
+
 	userId := r.Context().Value("userID").(int)
 
-	err = CreateConnectionRequest(userId, formEmail)
+	err = CreateConnectionRequest(userId, senderRole, formEmail)
 	if err != nil {
 		fmt.Printf("error creating connection request: %v from userId: %d, and email given: %s\n", err, userId, formEmail)
 		http.Error(w, fmt.Sprintf("error creating connection request: %v from userId: %d, and email given: %s\n", err, userId, formEmail), http.StatusBadRequest)
