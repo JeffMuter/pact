@@ -8,5 +8,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [ 
       unstable.sqlc 
       air
+      sqlite
+      tailwindcss
     ];
 }
