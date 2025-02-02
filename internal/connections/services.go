@@ -23,11 +23,12 @@ func CreateConnectionRequest(userId int, email string) error {
 	var args database.CreateRequestParams
 	args.SenderID = int64(userId)
 	args.RecieverID = user.UserID
+	args.
 
-	// add this new req to db.
-	err = queries.CreateRequest(ctx, args)
+		// add this new req to db.
+		err = queries.CreateRequest(ctx, args)
 	if err != nil {
-		fmt.Println("error creating request")
+		fmt.Printf("error creating request from email senderID: %d, recieverId: %d\n", args.SenderID, args.RecieverID)
 		return fmt.Errorf("error couldnt find existing user via their email: %w\n", err)
 	}
 	return nil

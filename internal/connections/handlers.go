@@ -61,7 +61,8 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 
 	err = CreateConnectionRequest(userId, formEmail)
 	if err != nil {
-		fmt.Printf("error creating connection request: %v\n", err)
+		fmt.Printf("error creating connection request: %v from userId: %d, and email given: %s\n", err, userId, formEmail)
+		http.Error(w, fmt.Sprintf("error creating connection request: %v from userId: %d, and email given: %s\n", err, userId, formEmail), http.StatusBadRequest)
 		return
 	}
 	// no errs, all done

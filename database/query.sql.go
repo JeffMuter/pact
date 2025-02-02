@@ -24,16 +24,23 @@ func (q *Queries) CreateConnection(ctx context.Context, arg CreateConnectionPara
 }
 
 const createRequest = `-- name: CreateRequest :exec
-INSERT INTO connection_requests (sender_id, reciever_id) VALUES (?, ?)
+INSERT INTO connection_requests (sender_id, reciever_id, suggested_manager_id, suggested_worker_id) VALUES (?, ?, ?, ?)
 `
 
 type CreateRequestParams struct {
-	SenderID   int64
-	RecieverID int64
+	SenderID           int64
+	RecieverID         int64
+	SuggestedManagerID int64
+	SuggestedWorkerID  int64
 }
 
 func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) error {
-	_, err := q.db.ExecContext(ctx, createRequest, arg.SenderID, arg.RecieverID)
+	_, err := q.db.ExecContext(ctx, createRequest,
+		arg.SenderID,
+		arg.RecieverID,
+		arg.SuggestedManagerID,
+		arg.SuggestedWorkerID,
+	)
 	return err
 }
 
@@ -199,7 +206,7 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 }
 
 const getUserPendingRequests = `-- name: GetUserPendingRequests :many
-SELECT connection_requests.request_id, users.email, connection_requests.sender_id, connection_requests.reciever_id
+SELECT connection_requests.request_id, users.email, connection_requests.sender_id, connection_requests.reciever_id, connection_requests.suggested_manager_id, connection_requests.suggested_worker_id
 FROM connection_requests
 JOIN users ON connection_requests.sender_id = users.user_id
 WHERE connection_requests.is_active = 1
@@ -207,10 +214,12 @@ AND connection_requests.reciever_id = ?
 `
 
 type GetUserPendingRequestsRow struct {
-	RequestID  int64
-	Email      string
-	SenderID   int64
-	RecieverID int64
+	RequestID          int64
+	Email              string
+	SenderID           int64
+	RecieverID         int64
+	SuggestedManagerID int64
+	SuggestedWorkerID  int64
 }
 
 func (q *Queries) GetUserPendingRequests(ctx context.Context, recieverID int64) ([]GetUserPendingRequestsRow, error) {
@@ -227,6 +236,8 @@ func (q *Queries) GetUserPendingRequests(ctx context.Context, recieverID int64) 
 			&i.Email,
 			&i.SenderID,
 			&i.RecieverID,
+			&i.SuggestedManagerID,
+			&i.SuggestedWorkerID,
 		); err != nil {
 			return nil, err
 		}
