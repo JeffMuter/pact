@@ -9,8 +9,13 @@
 	<input class="mb-8 text-black" type="text" name="email">
 	<button type="submit">Send</button>
 </form>
+
 <!-- current connection, or status of no connection -->
 <h3 class="mb-8">Current Connection:</h3>
+<div>
+	<h4>{{ .Data.ActiveConnection.Email }}</h4>
+	<h4>Your {{ .Data.ActiveConnection.Role }}</h4>
+</div>
 
 <!-- show list of connections -->
 <h3>My Connections:</h3>

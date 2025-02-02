@@ -127,3 +127,17 @@ func createConnection(senderId, recieverId int) error {
 
 	return nil
 }
+
+// getConnectionsById takes a users id, and returns all active connections for this user
+func getConnectionsByUserId(userId int) ([]database.Connection, error) {
+
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	rows, err := queries.GetConnectionsById(ctx, int64(userId))
+	if err != nil {
+		return nil, fmt.Errorf("could not get connections by userId: %w", err)
+	}
+
+	return rows, nil
+}

@@ -31,3 +31,6 @@ DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?;
 
 -- name: CreateConnection :exec
 INSERT INTO connections (manager_id, worker_id) VALUES (?, ?);
+
+-- name: GetConnectionsById :many
+SELECT * FROM connections WHERE ? IN (manager_id, worker_id);

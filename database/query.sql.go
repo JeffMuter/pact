@@ -131,6 +131,33 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getConnectionsById = `-- name: GetConnectionsById :many
+SELECT connection_id, manager_id, worker_id FROM connections WHERE ? IN (manager_id, worker_id)
+`
+
+func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]Connection, error) {
+	rows, err := q.db.QueryContext(ctx, getConnectionsById, managerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Connection
+	for rows.Next() {
+		var i Connection
+		if err := rows.Scan(&i.ConnectionID, &i.ManagerID, &i.WorkerID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT user_id, email, username, password_hash, role, is_member, points, created_at FROM users WHERE email = ?
 `

@@ -18,8 +18,8 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no userID in context of request", http.StatusUnauthorized)
 		return
 	}
-	rows, err := getUsersPendingConnectionRequests(userId)
-	if len(rows) == 0 {
+	pendingRequestRows, err := getUsersPendingConnectionRequests(userId)
+	if len(pendingRequestRows) == 0 {
 		// worth seeing for debugging. but no error here.
 		fmt.Println("no pending connections...")
 	}
@@ -27,10 +27,19 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting pending requests: %v\n", http.StatusInternalServerError)
 	}
 
+	connectionRows, err := getConnectionsByUserId(userId)
+	if err != nil {
+		fmt.Printf("getting all connection for user by the userId failed: %v\n", err)
+	}
+	if len(connectionRows) == 0 {
+		fmt.Println("no connections found for this user")
+	}
+
 	data := pages.TemplateData{
 		Data: map[string]any{
 			"Title":                     "Connection",
-			"PendingConnectionRequests": rows,
+			"Connections":               connectionRows,
+			"PendingConnectionRequests": pendingRequestRows,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
