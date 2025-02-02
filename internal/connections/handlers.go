@@ -95,6 +95,7 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("senderId value not a number in create-connection request: %v\n", err)
 	}
+
 	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
 	if err != nil {
 		fmt.Printf("recieverId non a number from create connection request: %v\n", err)

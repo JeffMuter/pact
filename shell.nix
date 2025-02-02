@@ -5,5 +5,8 @@ let
   };
 in
 pkgs.mkShell {
-  buildInputs = [ unstable.sqlc ];
+  buildInputs = with pkgs; [ 
+      unstable.sqlc 
+      air
+    ];
 }

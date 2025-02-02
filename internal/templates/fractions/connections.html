@@ -1,45 +1,55 @@
 {{ define "connections" }}
+<div class="flex flex-col">
+	<h1>Connections</h1>
 
-<h1>Connections</h1>
+	<!-- send req form, type in email -->
+	<section class="flex flex-col">
+		<form hx-post="/createConnectionRequest">
+			<h3 class="mb-4">Send Connection Request:</h3>
+			<label class="mb-2">Email</label><br>
+			<input class="mb-8 text-black" type="text" name="email">
+			<label>You are the... ( manager or worker )</label>
+			<input class="mb-8 text-black" type="text" name="role">
+			<button type="submit">Send</button>
+		</form>
+	</section>
 
-<!-- send req form, type in email -->
-<form hx-post="/createConnectionRequest">
-	<h3 class="mb-4">Send Connection Request:</h3>
-	<label class="mb-2">Email</label><br>
-	<input class="mb-8 text-black" type="text" name="email">
-	<button type="submit">Send</button>
-</form>
+	<!-- current connection, or status of no connection -->
+	<section class="flex flex-col hidden">
+		<h3 class="mb-8">Current Connection:</h3>
+		<div>
+			<h4>{{ .Data.ActiveConnection.Email }}</h4>
+			<h4>Your {{ .Data.ActiveConnection.Role }}</h4>
+		</div>
+	</section>
 
-<!-- current connection, or status of no connection -->
-<h3 class="mb-8">Current Connection:</h3>
-<div>
-	<h4>{{ .Data.ActiveConnection.Email }}</h4>
-	<h4>Your {{ .Data.ActiveConnection.Role }}</h4>
-</div>
+	<!-- show list of connections -->
+	<section class="flex flex-col">
+		<h3>My Connections:</h3>
+		<ul>
+			{{ range .Data.Connections }}
+			<li>
+				<!-- selecting user makes this the active relationship/connection. UI change to that relationship dynamic -->
+				<h4>{{ .Email }}</h4>
+				<h4>Your {{ .Role }}</h4>
+				<button>Select</button>
+			</li>
+			{{ end }}
+		</ul>
+	</section>
 
-<!-- show list of connections -->
-<h3>My Connections:</h3>
-<ul>
-	{{ range .Data.Connections }}
-	<li>
-		<!-- selecting user makes this the active relationship/connection. UI change to that relationship dynamic -->
-		<h4>{{ .Email }}</h4>
-		<h4>Your {{ .Role }}</h4>
-		<button>Select</button>
-	</li>
+	<!-- if requests exist, they should list here. optionally delete or accept them as 2 buttons -->
+	<section class="flex flex-col">
+		<h3 class="mb-8">Connection Requests:</h3>
+
+		{{ range .Data.PendingConnectionRequests }}
+		<li class="flex justify-between pending-request">
+			<h4>{{ .Email }}</h4>
+			<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
+			<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}"
+				hx-target="pending-request">Reject</button>
+		</li>
+	</section>
 	{{ end }}
-</ul>
-
-<!-- if requests exist, they should list here. optionally delete or accept them as 2 buttons -->
-<h3 class="mb-8">Connection Requests:</h3>
-
-{{ range .Data.PendingConnectionRequests }}
-<li class="flex justify-between pending-request">
-	<h4>{{ .Email }}</h4>
-	<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
-	<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}"
-		hx-target="pending-request">Reject</button>
-</li>
-{{ end }}
-
+</div>
 {{ end }}
