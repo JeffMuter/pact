@@ -33,4 +33,13 @@ DELETE FROM connection_requests WHERE sender_id = ? AND reciever_id = ?;
 INSERT INTO connections (manager_id, worker_id) VALUES (?, ?);
 
 -- name: GetConnectionsById :many
-SELECT * FROM connections WHERE ? IN (manager_id, worker_id);
+SELECT 
+    c.connection_id,
+    c.manager_id,
+    m.username AS manager_username,
+    c.worker_id,
+    w.username AS worker_username
+FROM connections c
+JOIN users m ON c.manager_id = m.user_id
+JOIN users w ON c.worker_id = w.user_id
+WHERE ? IN (c.manager_id, c.worker_id);

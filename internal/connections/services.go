@@ -143,7 +143,7 @@ func createConnection(senderId, recieverId int) error {
 }
 
 // getConnectionsById takes a users id, and returns all active connections for this user
-func getConnectionsByUserId(userId int) ([]database.Connection, error) {
+func getConnectionsByUserId(userId int) ([]database.GetConnectionsByIdRow, error) {
 
 	queries := database.GetQueries()
 	ctx := context.Background()

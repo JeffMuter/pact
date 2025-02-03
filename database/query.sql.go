@@ -139,19 +139,42 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getConnectionsById = `-- name: GetConnectionsById :many
-SELECT connection_id, manager_id, worker_id FROM connections WHERE ? IN (manager_id, worker_id)
+SELECT 
+    c.connection_id,
+    c.manager_id,
+    m.username AS manager_username,
+    c.worker_id,
+    w.username AS worker_username
+FROM connections c
+JOIN users m ON c.manager_id = m.user_id
+JOIN users w ON c.worker_id = w.user_id
+WHERE ? IN (c.manager_id, c.worker_id)
 `
 
-func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]Connection, error) {
+type GetConnectionsByIdRow struct {
+	ConnectionID    int64
+	ManagerID       int64
+	ManagerUsername string
+	WorkerID        int64
+	WorkerUsername  string
+}
+
+func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]GetConnectionsByIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, getConnectionsById, managerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Connection
+	var items []GetConnectionsByIdRow
 	for rows.Next() {
-		var i Connection
-		if err := rows.Scan(&i.ConnectionID, &i.ManagerID, &i.WorkerID); err != nil {
+		var i GetConnectionsByIdRow
+		if err := rows.Scan(
+			&i.ConnectionID,
+			&i.ManagerID,
+			&i.ManagerUsername,
+			&i.WorkerID,
+			&i.WorkerUsername,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
