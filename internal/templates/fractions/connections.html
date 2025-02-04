@@ -27,13 +27,13 @@
 	<section class="flex flex-col">
 		<h3>My Connections:</h3>
 		<ul class="mb-4">
-			{{ range $name, $role := .Data.Connections }}
+			{{ range .Data.Connections }}
 			<li
 				class="p-4 mb-8 border rounded border-emerald-400 bg-gray-900 flex flex-row justify-between">
 				<!-- selecting user makes this the active relationship/connection. UI change to that relationship dynamic -->
-				<h4>{{ $name }}</h4>
-				<h4>Your {{ $role }}</h4>
-				<button>Select</button>
+				<h4>{{ .Username }}</h4>
+				<h4>Your {{ .Role }}</h4>
+				<button hx-put="updateActiveConnection\{{ .ConnectionId }}\{{ .Role }}">Select</button>
 			</li>
 			{{ end }}
 		</ul>

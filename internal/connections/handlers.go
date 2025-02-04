@@ -50,12 +50,21 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 				Username     string
 				Role         string
 			}{
-				ConnectionId: 1,
-				Username:     "jeff",
+				ConnectionId: int(connectionRow.ConnectionID),
+				Username:     connectionRow.WorkerUsername,
 				Role:         "worker",
 			})
 		}
 		if userId == int(connectionRow.WorkerID) {
+			connections = append(connections, struct {
+				ConnectionId int
+				Username     string
+				Role         string
+			}{
+				ConnectionId: int(connectionRow.ConnectionID),
+				Username:     connectionRow.ManagerUsername,
+				Role:         "worker",
+			})
 		}
 	}
 
@@ -143,5 +152,10 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("problem in creating connection: %v\n", err)
 	}
+	w.WriteHeader(200)
+}
+
+// HandleUpdateActiveConnection is a handler to update the user's active connection in the users table, then force the user's page to reload.
+func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
