@@ -12,7 +12,7 @@ import (
 func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	// Create TemplateData
 	data := pages.TemplateData{
-		Data: map[string]string{
+		Data: map[string]any{
 			"Title": "Registration",
 		},
 	}

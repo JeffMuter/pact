@@ -27,6 +27,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting pending requests: %v\n", http.StatusInternalServerError)
 	}
 
+	// uh...  so we want to get some info to front end for making the list of connections. so we get the connections, then need to make map of usernames to the role that the user we see listed has accepted to be.
 	connectionRows, err := getConnectionsByUserId(userId)
 	if err != nil {
 		fmt.Printf("getting all connection for user by the userId failed: %v\n", err)
@@ -35,10 +36,33 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("no connections found for this user")
 	}
 
+	connections := []struct {
+		ConnectionId int
+		Username     string
+		Role         string
+	}{}
+
+	for _, connectionRow := range connectionRows {
+		// figure out my userId
+		if userId == int(connectionRow.ManagerID) {
+			connections = append(connections, struct {
+				ConnectionId int
+				Username     string
+				Role         string
+			}{
+				ConnectionId: 1,
+				Username:     "jeff",
+				Role:         "worker",
+			})
+		}
+		if userId == int(connectionRow.WorkerID) {
+		}
+	}
+
 	data := pages.TemplateData{
 		Data: map[string]any{
 			"Title":                     "Connection",
-			"Connections":               connectionRows,
+			"Connections":               connections,
 			"PendingConnectionRequests": pendingRequestRows,
 		},
 	}
