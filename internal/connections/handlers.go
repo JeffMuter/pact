@@ -68,14 +68,20 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// get info on the active user to show on the page
+	acUsername, acRole, err := getActiveConnectionDetails(userId)
+	if err != nil {
+		// TODO: what if there is no active user? different error. need to think out different responses for that, think them through
+		fmt.Printf("error getting active connection details: %v\n", err)
+	}
+
 	data := pages.TemplateData{
 		Data: map[string]any{
 			"Title":                     "Connection",
 			"Connections":               connections,
 			"PendingConnectionRequests": pendingRequestRows,
-			"ActiveConnectionId":        activeConnectionId,
-			"ActiveUserUsername":        activeConnectionUsername,
-			"ActiveConnectionRole":      activeConnectionRole,
+			"ActiveUserUsername":        acUsername,
+			"ActiveConnectionRole":      acRole,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)

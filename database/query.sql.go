@@ -300,6 +300,17 @@ func (q *Queries) GetUserPendingRequests(ctx context.Context, recieverID int64) 
 	return items, nil
 }
 
+const getUsernameByUserId = `-- name: GetUsernameByUserId :one
+SELECT username FROM users WHERE user_id = ?
+`
+
+func (q *Queries) GetUsernameByUserId(ctx context.Context, userID int64) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUsernameByUserId, userID)
+	var username string
+	err := row.Scan(&username)
+	return username, err
+}
+
 const updateActiveConnection = `-- name: UpdateActiveConnection :exec
 UPDATE users SET active_connection_id = ?
 `

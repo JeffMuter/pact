@@ -82,6 +82,7 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 	return nil
 }
 
+// createConnection uses a sender and reciever id to create a new connection row in the connections table by gathering info using those details to gather info from other tables
 func createConnection(senderId, recieverId int) error {
 	fmt.Println("begin to create connection from user ids")
 
@@ -174,6 +175,22 @@ func getActiveConnectionDetails(userId int) (string, string, error) {
 
 	queries := database.GetQueries()
 	ctx := context.Background()
+
+	row, err := queries.GetActiveConnectionDetails(ctx, int64(userId))
+	if err != nil {
+		fmt.Printf("could not get active connection details from db using userId: %s, err: %v\n", userId, err)
+	}
+
+	// using the manager and worker id from the returned row, figure out this user's role in the active connection
+	managerId, workerId := int(row.ManagerID), int(row.WorkerID)
+
+	if userId == workerId {
+		acRole = "manager"
+		acRole, err = queries.GetUsernameByUserId(ctx, int64(managerId))
+	} else if userId == managerId {
+		acRole = "worker"
+		acRole, err = queries.GetUsernameByUserId(ctx, int64(workerId))
+	}
 
 	return acUsername, acRole, nil
 }

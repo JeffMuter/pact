@@ -7,6 +7,9 @@ SELECT * from users WHERE user_id = ?;
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = ?;
 
+-- name: GetUsernameByUserId :one
+SELECT username FROM users WHERE user_id = ?;
+
 -- name: UserIsMemberById :one
 SELECT is_member FROM users WHERE user_id = ?;
 
