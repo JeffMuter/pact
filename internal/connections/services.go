@@ -83,7 +83,9 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 }
 
 // createConnection uses a sender and reciever id to create a new connection row in the connections table by gathering info using those details to gather info from other tables
-func createConnection(senderId, recieverId int) error {
+func createConnection(senderRole string, senderId, recieverId int) error {
+	// TODO: my understanding is, the were currently sending 2 userid, without knowing which one is the manager and which is the worker in this connection.
+
 	fmt.Println("begin to create connection from user ids")
 
 	var managerUserId, workerUserId int
@@ -91,35 +93,12 @@ func createConnection(senderId, recieverId int) error {
 	queries := database.GetQueries()
 	ctx := context.Background()
 
-	// get sender and reciever user values from the db from the ids recieved from params
-	senderUser, err := queries.GetUserById(ctx, int64(senderId))
-	if err != nil {
-		return fmt.Errorf("could not find connection request sender by their id in db: %w", err)
-	}
+	if senderRole == "manager" {
 
-	recieverUser, err := queries.GetUserById(ctx, int64(recieverId))
-	if err != nil {
-		return fmt.Errorf("user could not be found in db from the connection request recievers id: %w", err)
-	}
+	} else if senderRole == "worker" {
 
-	// set manager & worker id values, and do some error detection
-	if senderUser.Role == recieverUser.Role {
-		return fmt.Errorf("connection request sender & reciever are the same role. A role combination we do no support.")
-	}
-	if senderUser.Role == "manager" {
-		managerUserId = senderId
-	} else if senderUser.Role == "worker" {
-		workerUserId = senderId
 	} else {
-		return fmt.Errorf("sender user was found, but their role type is invalid...")
-	}
-
-	if recieverUser.Role == "manager" && managerUserId == 0 {
-		managerUserId = recieverId
-	} else if recieverUser.Role == "worker" && workerUserId == 0 {
-		workerUserId = recieverId
-	} else {
-		return fmt.Errorf("reciever and sender users were found. reciever role was probably invalid")
+		return fmt.Errorf("senderRole neither manager or worker.")
 	}
 
 	var args database.CreateConnectionParams

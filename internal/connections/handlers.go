@@ -101,6 +101,7 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	senderRole := r.FormValue("senderRole")
+
 	if len(senderRole) == 0 {
 		fmt.Println("sender role not recieved...")
 		http.Error(w, "sender role not recieved...", http.StatusBadRequest)
@@ -151,14 +152,22 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
 	if err != nil {
 		fmt.Printf("senderId value not a number in create-connection request: %v\n", err)
+		http.Error(w, "senderId value not a number in create-connection request: %v\n", http.StatusBadRequest)
 	}
 
 	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
 	if err != nil {
 		fmt.Printf("recieverId non a number from create connection request: %v\n", err)
+		http.Error(w, "recieverId non a number from create connection request: %v\n", http.StatusBadRequest)
 	}
 
-	err = createConnection(senderId, recieverId)
+	senderRole := r.PathValue("senderRole")
+	if len(senderRole) == 0 {
+		fmt.Println("error getting senderRole, no sendeRole recieved.")
+		http.Error(w, "error getting senderRole, no sendeRole recieved.", http.StatusBadRequest)
+	}
+
+	err = createConnection(senderRole, senderId, recieverId)
 	if err != nil {
 		fmt.Printf("problem in creating connection: %v\n", err)
 	}

@@ -19,7 +19,7 @@
 		<h3 class="mb-8">Current Connection:</h3>
 		<div>
 			<h4>{{ .Data.ActiveConnection.Username }}</h4>
-			<h4>Your {{ .Data.ActiveConnection.Role }}</h4>
+			<h4>Your: {{ .Data.ActiveConnection.Role }}</h4>
 		</div>
 	</section>
 
@@ -47,9 +47,10 @@
 		{{ range .Data.PendingConnectionRequests }}
 		<li class="flex justify-between pending-request">
 			<h4>{{ .Email }}</h4>
-			<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
-			<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}"
-				hx-target="pending-request">Reject</button>
+			<p>Wants to be your: {{ .SenderSuggestedRole }}
+				<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
+				<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}"
+					hx-target="pending-request">Reject</button>
 		</li>
 	</section>
 	{{ end }}
