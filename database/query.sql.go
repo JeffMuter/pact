@@ -96,6 +96,37 @@ func (q *Queries) DeleteConnectionRequestByUserIds(ctx context.Context, arg Dele
 	return err
 }
 
+const getActiveConnectionDetails = `-- name: GetActiveConnectionDetails :one
+SELECT worker_id, manager_id
+FROM connections
+WHERE connection_id = ?
+`
+
+type GetActiveConnectionDetailsRow struct {
+	WorkerID  int64
+	ManagerID int64
+}
+
+func (q *Queries) GetActiveConnectionDetails(ctx context.Context, connectionID int64) (GetActiveConnectionDetailsRow, error) {
+	row := q.db.QueryRowContext(ctx, getActiveConnectionDetails, connectionID)
+	var i GetActiveConnectionDetailsRow
+	err := row.Scan(&i.WorkerID, &i.ManagerID)
+	return i, err
+}
+
+const getActiveConnectionId = `-- name: GetActiveConnectionId :one
+SELECT active_connection_id
+FROM users
+WHERE user_id= ?
+`
+
+func (q *Queries) GetActiveConnectionId(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getActiveConnectionId, userID)
+	var active_connection_id int64
+	err := row.Scan(&active_connection_id)
+	return active_connection_id, err
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at FROM users
 `

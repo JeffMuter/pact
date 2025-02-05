@@ -73,6 +73,9 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 			"Title":                     "Connection",
 			"Connections":               connections,
 			"PendingConnectionRequests": pendingRequestRows,
+			"ActiveConnectionId":        activeConnectionId,
+			"ActiveUserUsername":        activeConnectionUsername,
+			"ActiveConnectionRole":      activeConnectionRole,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
@@ -163,6 +166,10 @@ func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "err, connection Id from template data not an integer.", http.StatusBadRequest)
 	}
 
+	connectionRole := r.PathValue("connection_role")
+
+	connectionUsername := r.PathValue("connection_username")
+
 	// update the users table with connectionId
 	err = updateActiveConnection(connectionId)
 	if err != nil {
@@ -170,19 +177,12 @@ func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error updating active connection: %v\n", http.StatusInternalServerError)
 	}
 
-	// get active connection details
-	err = getActiveConnectionDetails(connectionId)
-	if err != nil {
-		fmt.Printf("could not get active connection details while updating active connection: %w\n", err)
-		http.Errorf(w, "could not get active connection details while updating active connection: %w\n", http.StatusInternalServerError)
-	}
-
 	data := pages.TemplateData{
 		Data: map[string]any{
-			"ActiveConnectionId":               ,
-			"ActiveUserUsername":               ,
-			"ActiveConnectionRole": ,
+			"ActiveConnectionId":   connectionId,
+			"ActiveUserUsername":   connectionUsername,
+			"ActiveConnectionRole": connectionRole,
 		},
 	}
-	pages.RenderTemplateFraction(w, "connections", data)
+	pages.RenderTemplateFraction(w, "activeConnection", data)
 }

@@ -18,7 +18,7 @@
 	<section class="flex flex-col hidden">
 		<h3 class="mb-8">Current Connection:</h3>
 		<div>
-			<h4>{{ .Data.ActiveConnection.Email }}</h4>
+			<h4>{{ .Data.ActiveConnection.Username }}</h4>
 			<h4>Your {{ .Data.ActiveConnection.Role }}</h4>
 		</div>
 	</section>
@@ -33,7 +33,8 @@
 				<!-- selecting user makes this the active relationship/connection. UI change to that relationship dynamic -->
 				<h4>{{ .Username }}</h4>
 				<h4>Your {{ .Role }}</h4>
-				<button hx-put="updateActiveConnection\{{ .ConnectionId }}">Select</button>
+				<button
+					hx-put="updateActiveConnection\{{ .ConnectionId }}\{{ .Username }}\{{ .Role }}">Select</button>
 			</li>
 			{{ end }}
 		</ul>
@@ -52,5 +53,13 @@
 		</li>
 	</section>
 	{{ end }}
+</div>
+{{ end }}
+
+{{ define "activeConnection" }}
+
+<div>
+	<h4>{{ .Data.ActiveConnectionUsername }}</h4>
+	<h4>Your {{ .Data.ActiveConnectionRole }}</h4>
 </div>
 {{ end }}

@@ -46,3 +46,13 @@ WHERE ? IN (c.manager_id, c.worker_id);
 
 -- name: UpdateActiveConnection :exec
 UPDATE users SET active_connection_id = ?;
+
+-- name: GetActiveConnectionId :one
+SELECT active_connection_id
+FROM users
+WHERE user_id= ?;
+
+-- name: GetActiveConnectionDetails :one
+SELECT worker_id, manager_id
+FROM connections
+WHERE connection_id = ?;
