@@ -155,3 +155,8 @@ func getConnectionsByUserId(userId int) ([]database.GetConnectionsByIdRow, error
 
 	return rows, nil
 }
+
+// updateActiveConnection using connectionId and the connectionRole to update users user on the user table, update the connectionId
+func updateActiveConnection(connectionId int, connectionRole string) error {
+	return nil
+}

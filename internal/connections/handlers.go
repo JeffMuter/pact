@@ -137,6 +137,7 @@ func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
+// HandleCreateConnection using sender & reciever id used from path values to create a new connection in the db.
 func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
 	if err != nil {
@@ -157,5 +158,22 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 
 // HandleUpdateActiveConnection is a handler to update the user's active connection in the users table, then force the user's page to reload.
 func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
+	connectionId, err := strconv.Atoi(r.PathValue("connection_id"))
+	if err != nil {
+		fmt.Printf("err, connection Id from template data not an integer: %w", err)
+		http.Error(w, "err, connection Id from template data not an integer.", http.StatusBadRequest)
+	}
+	connectionRole, err := strconv.Atoi(r.PathValue("role"))
+	if err != nil {
+		fmt.Println("could not find connection role in path value.")
+		http.Error(w, "could not find connection role in path value.", http.StatusBadRequest)
+	}
+
+	err = updateActiveConnection(connectionId, connectionRole)
+	if err != nil {
+		fmt.Printf("error updating active connection: %v\n", err)
+		http.Error(w, "error updating active connection: %v\n", http.StatusInternalServerError)
+	}
+
 	w.WriteHeader(200)
 }
