@@ -73,6 +73,9 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 			"Title":                     "Connection",
 			"Connections":               connections,
 			"PendingConnectionRequests": pendingRequestRows,
+			"ActiveConnectionId":        activeConnectionId,
+			"ActiveUserUsername":        activeConnectionUsername,
+			"ActiveConnectionRole":      activeConnectionRole,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
@@ -156,24 +159,30 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-// HandleUpdateActiveConnection is a handler to update the user's active connection in the users table, then force the user's page to reload.
 func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 	connectionId, err := strconv.Atoi(r.PathValue("connection_id"))
 	if err != nil {
-		fmt.Printf("err, connection Id from template data not an integer: %w", err)
+		fmt.Printf("err, connection Id from template data not an integer: %v", err)
 		http.Error(w, "err, connection Id from template data not an integer.", http.StatusBadRequest)
 	}
-	connectionRole, err := strconv.Atoi(r.PathValue("role"))
-	if err != nil {
-		fmt.Println("could not find connection role in path value.")
-		http.Error(w, "could not find connection role in path value.", http.StatusBadRequest)
-	}
 
-	err = updateActiveConnection(connectionId, connectionRole)
+	connectionRole := r.PathValue("connection_role")
+
+	connectionUsername := r.PathValue("connection_username")
+
+	// update the users table with connectionId
+	err = updateActiveConnection(connectionId)
 	if err != nil {
 		fmt.Printf("error updating active connection: %v\n", err)
 		http.Error(w, "error updating active connection: %v\n", http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(200)
+	data := pages.TemplateData{
+		Data: map[string]any{
+			"ActiveConnectionId":   connectionId,
+			"ActiveUserUsername":   connectionUsername,
+			"ActiveConnectionRole": connectionRole,
+		},
+	}
+	pages.RenderTemplateFraction(w, "activeConnection", data)
 }

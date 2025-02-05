@@ -89,12 +89,12 @@ type TaskWorkermission struct {
 }
 
 type User struct {
-	UserID       int64
-	Email        string
-	Username     string
-	PasswordHash string
-	Role         string
-	IsMember     int64
-	Points       int64
-	CreatedAt    sql.NullTime
+	UserID             int64
+	Email              string
+	Username           string
+	PasswordHash       string
+	ActiveConnectionID int64
+	IsMember           int64
+	Points             int64
+	CreatedAt          sql.NullTime
 }

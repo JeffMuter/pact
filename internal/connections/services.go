@@ -157,6 +157,23 @@ func getConnectionsByUserId(userId int) ([]database.GetConnectionsByIdRow, error
 }
 
 // updateActiveConnection using connectionId and the connectionRole to update users user on the user table, update the connectionId
-func updateActiveConnection(connectionId int, connectionRole string) error {
+func updateActiveConnection(connectionId int) error {
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	err := queries.UpdateActiveConnection(ctx, int64(connectionId))
+	if err != nil {
+		fmt.Errorf("update active connection failed with id: %d. error: %w", connectionId, err)
+	}
+
 	return nil
+}
+
+func getActiveConnectionDetails(userId int) (string, string, error) {
+	var acUsername, acRole string
+
+	queries := database.GetQueries()
+	ctx := context.Background()
+
+	return acUsername, acRole, nil
 }
