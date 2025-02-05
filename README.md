@@ -1,5 +1,14 @@
-go run main.go starts the web server on port 8080 --> localhost:8080/
-there is a nix-shell here, although not fleshed out properly at the latest write of the readme.
+there's a nix shell here, for those unfamiliar, it's a better docker. run it using:
+nix-shell
+once in the shell, you can start the project using:
+go run main.go
+
+or developers should run:
+./buildAir.sh
+
+they both run the project, but the build script will start the Air package, which allows for live reloading on saved changes in certain project repos.It will also run the necessary Tailwind & DaisyUI builds so that when a page is reloaded, we see the live results of new tailwind and daisyui styling.
+
+this starts the port on 8080. If you have all of the necessary software involved, just run the go run command mentioned above without nix-shell
 
 this project requires authentication, in dev, you can create accounts, requires  accessing the db to turn accounts into active members with subscriptions. 
 
