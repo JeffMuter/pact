@@ -156,24 +156,33 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-// HandleUpdateActiveConnection is a handler to update the user's active connection in the users table, then force the user's page to reload.
 func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 	connectionId, err := strconv.Atoi(r.PathValue("connection_id"))
 	if err != nil {
-		fmt.Printf("err, connection Id from template data not an integer: %w", err)
+		fmt.Printf("err, connection Id from template data not an integer: %v", err)
 		http.Error(w, "err, connection Id from template data not an integer.", http.StatusBadRequest)
 	}
-	connectionRole, err := strconv.Atoi(r.PathValue("role"))
-	if err != nil {
-		fmt.Println("could not find connection role in path value.")
-		http.Error(w, "could not find connection role in path value.", http.StatusBadRequest)
-	}
 
-	err = updateActiveConnection(connectionId, connectionRole)
+	// update the users table with connectionId
+	err = updateActiveConnection(connectionId)
 	if err != nil {
 		fmt.Printf("error updating active connection: %v\n", err)
 		http.Error(w, "error updating active connection: %v\n", http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(200)
+	// get active connection details
+	err = getActiveConnectionDetails(connectionId)
+	if err != nil {
+		fmt.Printf("could not get active connection details while updating active connection: %w\n", err)
+		http.Errorf(w, "could not get active connection details while updating active connection: %w\n", http.StatusInternalServerError)
+	}
+
+	data := pages.TemplateData{
+		Data: map[string]any{
+			"ActiveConnectionId":               ,
+			"ActiveUserUsername":               ,
+			"ActiveConnectionRole": ,
+		},
+	}
+	pages.RenderTemplateFraction(w, "connections", data)
 }

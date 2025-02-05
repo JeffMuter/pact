@@ -128,7 +128,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// set User fields
 	user.Email = r.FormValue("email")
 	user.Username = r.FormValue("username")
-	user.Role = r.FormValue("role")
 	user.PasswordHash = r.FormValue("password")
 	if user.Email == "" || user.PasswordHash == "" {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)

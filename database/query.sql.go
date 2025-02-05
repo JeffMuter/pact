@@ -66,23 +66,17 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) returning user_id
+INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?) returning user_id
 `
 
 type CreateUserParams struct {
 	Email        string
 	Username     string
-	Role         string
 	PasswordHash string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
-		arg.Email,
-		arg.Username,
-		arg.Role,
-		arg.PasswordHash,
-	)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Username, arg.PasswordHash)
 	var user_id int64
 	err := row.Scan(&user_id)
 	return user_id, err
@@ -103,7 +97,7 @@ func (q *Queries) DeleteConnectionRequestByUserIds(ctx context.Context, arg Dele
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT user_id, email, username, password_hash, role, is_member, points, created_at FROM users
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -120,7 +114,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.Username,
 			&i.PasswordHash,
-			&i.Role,
+			&i.ActiveConnectionID,
 			&i.IsMember,
 			&i.Points,
 			&i.CreatedAt,
@@ -189,7 +183,7 @@ func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]Ge
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, email, username, password_hash, role, is_member, points, created_at FROM users WHERE email = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at FROM users WHERE email = ?
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -200,7 +194,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.Username,
 		&i.PasswordHash,
-		&i.Role,
+		&i.ActiveConnectionID,
 		&i.IsMember,
 		&i.Points,
 		&i.CreatedAt,
@@ -209,7 +203,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT user_id, email, username, password_hash, role, is_member, points, created_at from users WHERE user_id = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at from users WHERE user_id = ?
 `
 
 func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
@@ -220,7 +214,7 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 		&i.Email,
 		&i.Username,
 		&i.PasswordHash,
-		&i.Role,
+		&i.ActiveConnectionID,
 		&i.IsMember,
 		&i.Points,
 		&i.CreatedAt,
@@ -273,6 +267,15 @@ func (q *Queries) GetUserPendingRequests(ctx context.Context, recieverID int64) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateActiveConnection = `-- name: UpdateActiveConnection :exec
+UPDATE users SET active_connection_id = ?
+`
+
+func (q *Queries) UpdateActiveConnection(ctx context.Context, activeConnectionID int64) error {
+	_, err := q.db.ExecContext(ctx, updateActiveConnection, activeConnectionID)
+	return err
 }
 
 const userIsMemberById = `-- name: UserIsMemberById :one

@@ -14,7 +14,7 @@
 		</form>
 	</section>
 
-	<!-- current connection, or status of no connection -->
+	<!-- active connection, or status of no connection -->
 	<section class="flex flex-col hidden">
 		<h3 class="mb-8">Current Connection:</h3>
 		<div>
@@ -33,7 +33,7 @@
 				<!-- selecting user makes this the active relationship/connection. UI change to that relationship dynamic -->
 				<h4>{{ .Username }}</h4>
 				<h4>Your {{ .Role }}</h4>
-				<button hx-put="updateActiveConnection\{{ .ConnectionId }}\{{ .Role }}">Select</button>
+				<button hx-put="updateActiveConnection\{{ .ConnectionId }}">Select</button>
 			</li>
 			{{ end }}
 		</ul>

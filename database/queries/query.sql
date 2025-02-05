@@ -11,7 +11,7 @@ SELECT * FROM users WHERE email = ?;
 SELECT is_member FROM users WHERE user_id = ?;
 
 -- name: CreateUser :one
-INSERT INTO users (email, username, role, password_hash) VALUES (?, ?, ?, ?) returning user_id;
+INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?) returning user_id;
 
 -- name: CreateSession :exec
 INSERT INTO sessions(user_id, token, created_at, expires_at) VALUES(?, ?, ?, ?);
@@ -43,3 +43,6 @@ FROM connections c
 JOIN users m ON c.manager_id = m.user_id
 JOIN users w ON c.worker_id = w.user_id
 WHERE ? IN (c.manager_id, c.worker_id);
+
+-- name: UpdateActiveConnection :exec
+UPDATE users SET active_connection_id = ?;
