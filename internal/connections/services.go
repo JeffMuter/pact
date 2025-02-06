@@ -82,10 +82,7 @@ func deleteConnectionRequest(senderId, recieverId int) error {
 	return nil
 }
 
-// createConnection uses a sender and reciever id to create a new connection row in the connections table by gathering info using those details to gather info from other tables
-func createConnection(senderRole string, senderId, recieverId int) error {
-	// TODO: my understanding is, the were currently sending 2 userid, without knowing which one is the manager and which is the worker in this connection.
-
+func createConnection(senderId, recieverId int) error {
 	fmt.Println("begin to create connection from user ids")
 
 	var managerUserId, workerUserId int
@@ -93,12 +90,35 @@ func createConnection(senderRole string, senderId, recieverId int) error {
 	queries := database.GetQueries()
 	ctx := context.Background()
 
-	if senderRole == "manager" {
+	// get sender and reciever user values from the db from the ids recieved from params
+	senderUser, err := queries.GetUserById(ctx, int64(senderId))
+	if err != nil {
+		return fmt.Errorf("could not find connection request sender by their id in db: %w", err)
+	}
 
-	} else if senderRole == "worker" {
+	recieverUser, err := queries.GetUserById(ctx, int64(recieverId))
+	if err != nil {
+		return fmt.Errorf("user could not be found in db from the connection request recievers id: %w", err)
+	}
 
+	// set manager & worker id values, and do some error detection
+	if senderUser.Role == recieverUser.Role {
+		return fmt.Errorf("connection request sender & reciever are the same role. A role combination we do no support.")
+	}
+	if senderUser.Role == "manager" {
+		managerUserId = senderId
+	} else if senderUser.Role == "worker" {
+		workerUserId = senderId
 	} else {
-		return fmt.Errorf("senderRole neither manager or worker.")
+		return fmt.Errorf("sender user was found, but their role type is invalid...")
+	}
+
+	if recieverUser.Role == "manager" && managerUserId == 0 {
+		managerUserId = recieverId
+	} else if recieverUser.Role == "worker" && workerUserId == 0 {
+		workerUserId = recieverId
+	} else {
+		return fmt.Errorf("reciever and sender users were found. reciever role was probably invalid")
 	}
 
 	var args database.CreateConnectionParams
@@ -149,27 +169,13 @@ func updateActiveConnection(connectionId int) error {
 	return nil
 }
 
-func getActiveConnectionDetails(userId int) (string, string, error) {
+func getActiveConnectionDetails(userId int) (int, string, string, error) {
 	var acUsername, acRole string
 
 	queries := database.GetQueries()
 	ctx := context.Background()
 
-	row, err := queries.GetActiveConnectionDetails(ctx, int64(userId))
-	if err != nil {
-		fmt.Printf("could not get active connection details from db using userId: %s, err: %v\n", userId, err)
-	}
-
-	// using the manager and worker id from the returned row, figure out this user's role in the active connection
-	managerId, workerId := int(row.ManagerID), int(row.WorkerID)
-
-	if userId == workerId {
-		acRole = "manager"
-		acRole, err = queries.GetUsernameByUserId(ctx, int64(managerId))
-	} else if userId == managerId {
-		acRole = "worker"
-		acRole, err = queries.GetUsernameByUserId(ctx, int64(workerId))
-	}
+	row, err := queries.getActiveConnectionDetails(ctx, userId)
 
 	return acUsername, acRole, nil
 }

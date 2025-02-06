@@ -44,16 +44,17 @@
 	<section class="flex flex-col">
 		<h3 class="mb-8">Connection Requests:</h3>
 
-		{{ range .Data.PendingConnectionRequests }}
+		{{ range $row, $role := .Data.PendingConnectionRequests }}
 		<li class="flex justify-between pending-request">
-			<h4>{{ .Email }}</h4>
-			<p>Wants to be your: {{ .SenderSuggestedRole }}
-				<button hx-post="/createConnection\{{ .SenderID }}\{{ .RecieverID }}">Accept</button>
-				<button hx-delete="/deleteConnectionRequest\{{ .SenderID }}\{{ .RecieverID }}"
+			<h4>{{ $row.Email }}</h4>
+			<p>Wants to be your: {{ $role }}
+				<button
+					hx-post="/createConnection\{{ $row.SenderID }}\{{ $row.RecieverID }}">Accept</button>
+				<button hx-delete="/deleteConnectionRequest\{{ $row.SenderID }}\{{ $row.RecieverID }}"
 					hx-target="pending-request">Reject</button>
 		</li>
+		{{ end }}
 	</section>
-	{{ end }}
 </div>
 {{ end }}
 

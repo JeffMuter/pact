@@ -3,6 +3,7 @@ package connections
 import (
 	"fmt"
 	"net/http"
+	"pact/database"
 	"pact/internal/pages"
 	"strconv"
 )
@@ -25,6 +26,19 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		http.Error(w, "error getting pending requests: %v\n", http.StatusInternalServerError)
+	}
+
+	// prior pending request rows didn't establish what role the requester desired to be. need to assertain
+	var pendingRequests map[database.GetUserPendingRequestsRow]string
+
+	for _, row := range pendingRequestRows {
+		if row.SenderID == row.SuggestedManagerID { // sender wants to be your...
+			pendingRequests[row] = "manager"
+		} else if row.SenderID == row.SuggestedWorkerID {
+			pendingRequests[row] = "worker"
+		} else { // massive booboo
+			http.Error(w, "a pending request row sender id didnt match sugg worker or manager ids", http.StatusInternalServerError)
+		}
 	}
 
 	// uh...  so we want to get some info to front end for making the list of connections. so we get the connections, then need to make map of usernames to the role that the user we see listed has accepted to be.
@@ -68,20 +82,17 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// get info on the active user to show on the page
-	acUsername, acRole, err := getActiveConnectionDetails(userId)
-	if err != nil {
-		// TODO: what if there is no active user? different error. need to think out different responses for that, think them through
-		fmt.Printf("error getting active connection details: %v\n", err)
-	}
+	// get active connection details for data
+	activeConnectionId, activeConnectionUsername, activeConnectionRole, err := getActiveConnectionDetails(userId)
 
 	data := pages.TemplateData{
 		Data: map[string]any{
 			"Title":                     "Connection",
 			"Connections":               connections,
-			"PendingConnectionRequests": pendingRequestRows,
-			"ActiveUserUsername":        acUsername,
-			"ActiveConnectionRole":      acRole,
+			"PendingConnectionRequests": pendingRequests,
+			"ActiveConnectionId":        activeConnectionId,
+			"ActiveUserUsername":        activeConnectionUsername,
+			"ActiveConnectionRole":      activeConnectionRole,
 		},
 	}
 	pages.RenderTemplateFraction(w, "connections", data)
@@ -101,7 +112,6 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	senderRole := r.FormValue("senderRole")
-
 	if len(senderRole) == 0 {
 		fmt.Println("sender role not recieved...")
 		http.Error(w, "sender role not recieved...", http.StatusBadRequest)
@@ -152,22 +162,14 @@ func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
 	if err != nil {
 		fmt.Printf("senderId value not a number in create-connection request: %v\n", err)
-		http.Error(w, "senderId value not a number in create-connection request: %v\n", http.StatusBadRequest)
 	}
 
 	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
 	if err != nil {
 		fmt.Printf("recieverId non a number from create connection request: %v\n", err)
-		http.Error(w, "recieverId non a number from create connection request: %v\n", http.StatusBadRequest)
 	}
 
-	senderRole := r.PathValue("senderRole")
-	if len(senderRole) == 0 {
-		fmt.Println("error getting senderRole, no sendeRole recieved.")
-		http.Error(w, "error getting senderRole, no sendeRole recieved.", http.StatusBadRequest)
-	}
-
-	err = createConnection(senderRole, senderId, recieverId)
+	err = createConnection(senderId, recieverId)
 	if err != nil {
 		fmt.Printf("problem in creating connection: %v\n", err)
 	}
