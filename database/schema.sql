@@ -36,21 +36,21 @@ CREATE TABLE connections (
 CREATE TABLE connection_requests (
     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_id INTEGER NOT NULL,
-    reciever_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
     suggested_worker_id INTEGER NOT NULL,
     suggested_manager_id INTEGER NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (sender_id) REFERENCES users(user_id),
-    FOREIGN KEY (reciever_id) REFERENCES users(user_id),
+    FOREIGN KEY (receiver_id) REFERENCES users(user_id),
     FOREIGN KEY (suggested_manager_id) REFERENCES users(user_id),
     FOREIGN KEY (suggested_worker_id) REFERENCES users(user_id),
-    CHECK (sender_id != reciever_id),
+    CHECK (sender_id != receiver_id),
     CHECK (suggested_manager_id != suggested_worker_id),
     CHECK (
         (sender_id IN (suggested_manager_id, suggested_worker_id)) AND
-        (reciever_id IN (suggested_manager_id, suggested_worker_id))
+        (receiver_id IN (suggested_manager_id, suggested_worker_id))
     ),
-    UNIQUE(sender_id, reciever_id)
+    UNIQUE(sender_id, receiver_id)
 );
 
 -- Sessions table

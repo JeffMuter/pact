@@ -8,17 +8,20 @@ import (
 	"strconv"
 )
 
+// ServeConnectionsContent needs to send data on all existing connections & requests
 func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	// should have a user id added in the context of this req here. lets check
 	// got get list of requests.
 
-	// connection requests added to data here...
+	// Checking for & getting userId in context as prerequisite...
 	userId := r.Context().Value("userID").(int)
 	if userId < 1 {
-		fmt.Printf("userID not found in ctx, not good... userId: %v\n", userId)
+		fmt.Printf("error: userID not found in ctx, not good... userId: %v\n", userId)
 		http.Error(w, "no userID in context of request", http.StatusUnauthorized)
 		return
 	}
+
+	// get pending requests
 	pendingRequestRows, err := getUsersPendingConnectionRequests(userId)
 	if len(pendingRequestRows) == 0 {
 		// worth seeing for debugging. but no error here.
@@ -29,19 +32,19 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// prior pending request rows didn't establish what role the requester desired to be. need to assertain
-	var pendingRequests map[database.GetUserPendingRequestsRow]string
+	pendingRequestMap := make(map[database.GetUserPendingRequestsRow]string)
 
 	for _, row := range pendingRequestRows {
 		if row.SenderID == row.SuggestedManagerID { // sender wants to be your...
-			pendingRequests[row] = "manager"
+			pendingRequestMap[row] = "manager"
 		} else if row.SenderID == row.SuggestedWorkerID {
-			pendingRequests[row] = "worker"
+			pendingRequestMap[row] = "worker"
 		} else { // massive booboo
 			http.Error(w, "a pending request row sender id didnt match sugg worker or manager ids", http.StatusInternalServerError)
 		}
 	}
 
-	// uh...  so we want to get some info to front end for making the list of connections. so we get the connections, then need to make map of usernames to the role that the user we see listed has accepted to be.
+	// we get connections, then make map of usernames to role that the user we see listed has accepted to be.
 	connectionRows, err := getConnectionsByUserId(userId)
 	if err != nil {
 		fmt.Printf("getting all connection for user by the userId failed: %v\n", err)
@@ -57,7 +60,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 	}{}
 
 	for _, connectionRow := range connectionRows {
-		// figure out my userId
+		// figure out if user is manager or worker, set the connection
 		if userId == int(connectionRow.ManagerID) {
 			connections = append(connections, struct {
 				ConnectionId int
@@ -77,19 +80,19 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 			}{
 				ConnectionId: int(connectionRow.ConnectionID),
 				Username:     connectionRow.ManagerUsername,
-				Role:         "worker",
+				Role:         "manager",
 			})
 		}
 	}
 
-	// get active connection details for data
+	// get active connection details for the person we're connected to. their id, username, and role.
 	activeConnectionId, activeConnectionUsername, activeConnectionRole, err := getActiveConnectionDetails(userId)
 
 	data := pages.TemplateData{
 		Data: map[string]any{
 			"Title":                     "Connection",
 			"Connections":               connections,
-			"PendingConnectionRequests": pendingRequests,
+			"PendingConnectionRequests": pendingRequestMap,
 			"ActiveConnectionId":        activeConnectionId,
 			"ActiveUserUsername":        activeConnectionUsername,
 			"ActiveConnectionRole":      activeConnectionRole,
@@ -135,19 +138,19 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-// HandleDeleteConnectionRequest parses the request url to get the sender and reciever id's for the sql query we need to make to delete the connection request
+// HandleDeleteConnectionRequest parses the request url to get the sender and receiver id's for the sql query we need to make to delete the connection request
 func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
 	if err != nil {
 		http.Error(w, "error, url sender_id was not an int\n", http.StatusBadRequest)
 		return
 	}
-	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
+	receiverId, err := strconv.Atoi(r.PathValue("receiver_id"))
 	if err != nil {
-		http.Error(w, "error, url reciever_id was not an int\n", http.StatusBadRequest)
+		http.Error(w, "error, url receiver_id was not an int\n", http.StatusBadRequest)
 		return
 	}
-	err = deleteConnectionRequest(senderId, recieverId)
+	err = deleteConnectionRequest(senderId, receiverId)
 	if err != nil {
 		msg := fmt.Sprintf("error, deleting connection request failed: %v\n", err)
 		http.Error(w, msg, http.StatusInternalServerError)
@@ -157,19 +160,19 @@ func HandleDeleteConnectionRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-// HandleCreateConnection using sender & reciever id used from path values to create a new connection in the db.
+// HandleCreateConnection using sender & receiver id used from path values to create a new connection in the db.
 func HandleCreateConnection(w http.ResponseWriter, r *http.Request) {
 	senderId, err := strconv.Atoi(r.PathValue("sender_id"))
 	if err != nil {
 		fmt.Printf("senderId value not a number in create-connection request: %v\n", err)
 	}
 
-	recieverId, err := strconv.Atoi(r.PathValue("reciever_id"))
+	receiverId, err := strconv.Atoi(r.PathValue("receiver_id"))
 	if err != nil {
-		fmt.Printf("recieverId non a number from create connection request: %v\n", err)
+		fmt.Printf("receiverId non a number from create connection request: %v\n", err)
 	}
 
-	err = createConnection(senderId, recieverId)
+	err = createConnection(senderId, receiverId)
 	if err != nil {
 		fmt.Printf("problem in creating connection: %v\n", err)
 	}

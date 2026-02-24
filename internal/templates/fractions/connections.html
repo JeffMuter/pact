@@ -49,8 +49,8 @@
 			<h4>{{ $row.Email }}</h4>
 			<p>Wants to be your: {{ $role }}
 				<button
-					hx-post="/createConnection\{{ $row.SenderID }}\{{ $row.RecieverID }}">Accept</button>
-				<button hx-delete="/deleteConnectionRequest\{{ $row.SenderID }}\{{ $row.RecieverID }}"
+					hx-post="/createConnection\{{ $row.SenderID }}\{{ $row.ReceiverID }}">Accept</button>
+				<button hx-delete="/deleteConnectionRequest\{{ $row.SenderID }}\{{ $row.ReceiverID }}"
 					hx-target="pending-request">Reject</button>
 		</li>
 		{{ end }}
