@@ -1,5 +1,5 @@
 {{ define "secondaryButton" }}
-<button class="btn rounded{{ if .Color }} text-{{ .Color }}-600 border border-{{ .Color }}-400 hover:bg-{{ .Color }}-400 hover:text-black{{ else }} text-emerald-600 border border-emerald-400 hover:bg-emerald-400 hover:text-black{{ end }} bg-transparent p-2 duration-300{{ if .Class }} {{ .Class }}{{ end }}"{{ if .HtxGet }} hx-get="{{ .HtxGet }}"{{ end }}{{ if .HtxPost }} hx-post="{{ .HtxPost }}"{{ end }}{{ if .HtxPut }} hx-put="{{ .HtxPut }}"{{ end }}{{ if .HtxDelete }} hx-delete="{{ .HtxDelete }}"{{ end }}{{ if .HtxTarget }} hx-target="{{ .HtxTarget }}"{{ end }}{{ if .HtxSwap }} hx-swap="{{ .HtxSwap }}"{{ end }}>
+<button class="btn rounded{{ if .Color }} text-{{ .Color }}-600 border border-{{ .Color }}-400 hover:bg-{{ .Color }}-400 hover:text-black{{ else }} text-emerald-600 border border-emerald-400 hover:bg-emerald-400 hover:text-black{{ end }} bg-transparent p-2 duration-300{{ if .Class }} {{ .Class }}{{ end }}"{{ if .HtxGet }} hx-get="{{ .HtxGet }}"{{ end }}{{ if .HtxPost }} hx-post="{{ .HtxPost }}"{{ end }}{{ if .HtxPut }} hx-put="{{ .HtxPut }}"{{ end }}{{ if .HtxDelete }} hx-delete="{{ .HtxDelete }}"{{ end }}{{ if .HtxTarget }} hx-target="{{ .HtxTarget }}"{{ end }}{{ if .HtxSwap }} hx-swap="{{ .HtxSwap }}"{{ end }}{{ if .HtxConfirm }} hx-confirm="{{ .HtxConfirm }}"{{ end }}>
   {{ .Text }}
 </button>
 {{ end }}

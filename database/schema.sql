@@ -17,13 +17,16 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    active_connection_id INTEGER NOT NULL DEFAULT 0,
+    active_connection_id INTEGER DEFAULT NULL,
     is_member INTEGER NOT NULL DEFAULT 0,
     points INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (active_connection_id) REFERENCES connections(connection_id)
 );
 
+-- Connections represent an established manager-worker relationship.
+-- A user can appear in multiple connections with different partners, and can
+-- hold opposite roles in different connections (manager in one, worker in another).
 CREATE TABLE connections (
     connection_id INTEGER PRIMARY KEY AUTOINCREMENT,
     manager_id INTEGER NOT NULL,

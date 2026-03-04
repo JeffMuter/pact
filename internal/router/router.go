@@ -48,9 +48,10 @@ func Router() *http.ServeMux {
 	// connections
 	mux.HandleFunc("GET /connectionsContent", auth.AuthMiddleware(connections.ServeConnectionsContent))
 	mux.HandleFunc("POST /createConnectionRequest", auth.AuthMiddleware(connections.HandleCreateConnectionRequest))
-	mux.HandleFunc("DELETE /deleteConnectionRequest/{sender_id}/{reciever_id}", auth.AuthMiddleware(connections.HandleDeleteConnectionRequest))
-	mux.HandleFunc("POST /createConnection/{sender_id}/{reciever_id}", auth.AuthMiddleware(connections.HandleCreateConnection))
+	mux.HandleFunc("POST /acceptConnectionRequest/{request_id}", auth.AuthMiddleware(connections.HandleAcceptConnectionRequest))
+	mux.HandleFunc("POST /rejectConnectionRequest/{request_id}", auth.AuthMiddleware(connections.HandleRejectConnectionRequest))
 	mux.HandleFunc("PUT /updateActiveConnection/{connection_id}/{connection_username}/{connection_role}", auth.AuthMiddleware(connections.HandleUpdateActiveConnection))
+	mux.HandleFunc("DELETE /connection/{connection_id}", auth.AuthMiddleware(connections.HandleDeleteConnection))
 
 	// Serve static files
 	fileServer := http.FileServer(http.Dir("static"))

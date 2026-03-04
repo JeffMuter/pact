@@ -13,23 +13,31 @@
         <div class="divider my-6"></div>
         <div class="space-y-6">
           <div>
+            <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Username</p>
+            <p class="text-base text-white">{{ .Data.Username }}</p>
+          </div>
+          <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Email Address</p>
-            <p class="text-base text-white">user@example.com</p>
+            <p class="text-base text-white">{{ .Data.Email }}</p>
           </div>
           <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Account Status</p>
+            {{ if eq .Data.IsMember 1 }}
             <div class="badge badge-success gap-2 text-sm">
               <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
-              Active
+              Member
             </div>
+            {{ else }}
+            <div class="badge badge-warning gap-2 text-sm">
+              <span class="w-2 h-2 bg-yellow-400 rounded-full"></span>
+              Free
+            </div>
+            {{ end }}
           </div>
           <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Member Since</p>
-            <p class="text-base text-white">January 2025</p>
+            <p class="text-base text-white">{{ .Data.CreatedAt }}</p>
           </div>
-        </div>
-        <div class="mt-8">
-          {{ template "primaryButton" (dict "Text" "Edit Profile") }}
         </div>
       </div>
     </div>
@@ -42,71 +50,15 @@
         <div class="space-y-6">
           <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Active Pacts</p>
-            <p class="text-3xl font-bold text-emerald-400">3</p>
+            <p class="text-3xl font-bold text-emerald-400">{{ .Data.ConnectionCount }}</p>
           </div>
           <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Pending Requests</p>
-            <p class="text-3xl font-bold text-red-400">2</p>
+            <p class="text-3xl font-bold text-red-400">{{ .Data.PendingRequestCount }}</p>
           </div>
         </div>
         <div class="mt-8">
           {{ template "primaryButton" (dict "Text" "View Connections" "HtxGet" "connectionsContent" "HtxTarget" "#mainElement" "HtxSwap" "innerHTML") }}
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Security & Preferences Row -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-    
-    <!-- Security Card -->
-    <div class="card bg-gray-900 border border-gray-700 shadow-lg hover:shadow-emerald-400/20 hover:border-emerald-400 transition-all duration-300">
-      <div class="card-body p-8">
-        {{ template "sectionHeader" (dict "Icon" "S" "Title" "Security" "Description" "Password and privacy settings") }}
-        <div class="divider my-6"></div>
-        <div class="space-y-6">
-          <div>
-            <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-2">Password Status</p>
-            <div class="badge badge-success gap-2 text-sm">
-              <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
-              Secure
-            </div>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500">Last changed 3 months ago</p>
-          </div>
-        </div>
-        <div class="mt-8">
-          {{ template "primaryButton" (dict "Text" "Change Password") }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Preferences Card -->
-    <div class="card bg-gray-900 border border-gray-700 shadow-lg hover:shadow-emerald-400/20 hover:border-emerald-400 transition-all duration-300">
-      <div class="card-body p-8">
-        {{ template "sectionHeader" (dict "Icon" "P" "Title" "Preferences" "Description" "Notifications and settings") }}
-        <div class="divider my-6"></div>
-        <div class="space-y-6">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-1">Email Notifications</p>
-              <p class="text-sm text-gray-400">Receive updates about your account</p>
-            </div>
-            <input type="checkbox" class="toggle toggle-emerald toggle-lg" checked />
-          </div>
-          <div class="divider my-4"></div>
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="text-xs uppercase tracking-wide text-gray-500 font-bold mb-1">Two-Factor Auth</p>
-              <p class="text-sm text-gray-400">Extra security for your account</p>
-            </div>
-            <input type="checkbox" class="toggle toggle-emerald toggle-lg" />
-          </div>
-        </div>
-        <div class="mt-8">
-          {{ template "primaryButton" (dict "Text" "Save Preferences") }}
         </div>
       </div>
     </div>

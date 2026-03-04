@@ -93,7 +93,7 @@ type User struct {
 	Email              string
 	Username           string
 	PasswordHash       string
-	ActiveConnectionID int64
+	ActiveConnectionID sql.NullInt64
 	IsMember           int64
 	Points             int64
 	CreatedAt          sql.NullTime

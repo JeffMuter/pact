@@ -166,10 +166,28 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeAccountPage(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userID").(int)
+	if !ok {
+		http.Error(w, "userID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	ctx := context.Background()
+	accountData, err := database.GetQueries().GetAccountPageData(ctx, int64(userId))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error getting account data: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	data := TemplateData{
 		Data: map[string]any{
-			"Heading": "Account Page",
-			"Title":   "Account Page",
+			"Title":               "Account Page",
+			"Email":               accountData.Email,
+			"Username":            accountData.Username,
+			"CreatedAt":           accountData.CreatedAt,
+			"IsMember":            accountData.IsMember,
+			"ConnectionCount":     accountData.ConnectionCount,
+			"PendingRequestCount": accountData.PendingRequestCount,
 		},
 	}
 	

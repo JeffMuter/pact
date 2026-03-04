@@ -12,7 +12,7 @@ var queries *Queries
 
 func OpenDatabase() error {
 	var err error
-	db, err = sql.Open("sqlite3", "./database/database.db")
+	db, err = sql.Open("sqlite3", "./database/database.db?_journal_mode=WAL&_foreign_keys=on")
 	if err != nil {
 		return fmt.Errorf("error unable to connect to db: %w", err)
 	}

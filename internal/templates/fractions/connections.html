@@ -1,28 +1,33 @@
 {{ define "connections" }}
-<div class="flex flex-col w-3/4 mx-auto">
+<div id="connections-content" class="flex flex-col w-3/4 mx-auto">
 	{{ template "pageTitle" (dict "Title" "Connections") }}
 
 	<!-- send connection request form -->
 	<section class="my-6 p-6 border border-emerald-400 w-full mx-auto rounded-lg bg-gray-900">
 		<h2 class="text-2xl font-bold text-emerald-400 mb-6">Send Connection Request</h2>
 		<p class="text-gray-300 mb-6">Connect with a manager or worker to establish a collaborative relationship. Define your role and start working together.</p>
-		<form hx-post="/createConnectionRequest" class="flex flex-col gap-4">
-			{{ template "formGroup" (dict "ID" "email" "Name" "email" "Label" "Email Address" "Type" "email" "Required" true "Placeholder" "Enter recipient's email") }}
+		<form hx-post="/createConnectionRequest" hx-target="#request-status" hx-swap="innerHTML" class="flex flex-col gap-4">
+			{{ template "formGroup" (dict "ID" "email" "Name" "email" "Label" "Email Address" "Type" "text" "Required" true "Placeholder" "Enter recipient's email") }}
 
 			{{ template "formGroup" (dict "ID" "senderRole" "Name" "senderRole" "Label" "Your Role" "Type" "select" "Required" true "Placeholder" "Select your role" "Options" (slice (dict "Value" "manager" "Label" "Manager") (dict "Value" "worker" "Label" "Worker"))) }}
 
 			{{ template "secondaryButton" (dict "Text" "Send Request" "Class" "w-fit mt-4 font-semibold") }}
 		</form>
+		<div id="request-status"></div>
 	</section>
 
 	<!-- active connection display -->
-	<section class="my-6 p-6 card border border-emerald-400 w-full mx-auto rounded-lg bg-gray-900 hidden">
+	<div id="active-connection-section">
+	{{ if .Data.ActiveConnectionId }}
+	<section class="my-6 p-6 card border border-emerald-400 w-full mx-auto rounded-lg bg-gray-900">
 		<h2 class="text-2xl font-bold text-emerald-400 mb-4">Active Connection</h2>
 		<div class="bg-black rounded p-4">
-			<h3 class="text-lg text-white mb-2">{{ .Data.ActiveConnection.Username }}</h3>
-			<p class="text-gray-300">Your Role: <span class="text-emerald-400 font-semibold">{{ .Data.ActiveConnection.Role }}</span></p>
+			<h3 class="text-lg text-white mb-2">{{ .Data.ActiveUserUsername }}</h3>
+			<p class="text-gray-300">Your Role: <span class="text-emerald-400 font-semibold">{{ .Data.ActiveConnectionRole }}</span></p>
 		</div>
 	</section>
+	{{ end }}
+	</div>
 
 	<!-- my connections list -->
 	<section class="my-6 p-6 border border-emerald-400 w-full mx-auto rounded-lg bg-gray-900">
@@ -30,12 +35,19 @@
 		{{ if .Data.Connections }}
 		<ul class="space-y-4">
 			{{ range .Data.Connections }}
-			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-row justify-between items-center hover:bg-gray-800 transition-colors">
-				<div class="flex-1">
-					<h4 class="text-lg font-semibold text-white">{{ .Username }}</h4>
-					<p class="text-sm text-gray-400">You are the <span class="text-emerald-400">{{ .Role }}</span></p>
+			<li class="border rounded border-emerald-400 bg-black">
+				<div class="p-4 flex flex-row justify-between items-center cursor-pointer hover:bg-gray-800 transition-colors"
+				     onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180')">
+					<div class="flex-1">
+						<h4 class="text-lg font-semibold text-white">{{ .Username }}</h4>
+						<p class="text-sm text-gray-400">You are the <span class="text-emerald-400">{{ .Role }}</span></p>
+					</div>
+					<span class="toggle-icon text-emerald-400 transition-transform">▼</span>
 				</div>
-				{{ template "secondaryButton" (dict "Text" "Select" "HtxPut" (printf "updateActiveConnection/%s/%s/%s" .ConnectionId .Username .Role)) }}
+				<div class="hidden p-4 border-t border-emerald-400 flex flex-col sm:flex-row gap-3">
+					{{ template "secondaryButton" (dict "Text" "Make Active" "HtxPut" (printf "/updateActiveConnection/%d/%s/%s" .ConnectionId .Username .Role) "HtxTarget" "#active-connection-section" "HtxSwap" "innerHTML" "Class" "flex-1 sm:flex-initial") }}
+					{{ template "secondaryButton" (dict "Text" "Delete Connection" "Color" "red" "HtxDelete" (printf "/connection/%d" .ConnectionId) "HtxTarget" "#connections-content" "HtxConfirm" "Are you sure you want to delete this connection?" "Class" "flex-1 sm:flex-initial") }}
+				</div>
 			</li>
 			{{ end }}
 		</ul>
@@ -47,32 +59,30 @@
 	<!-- pending connection requests -->
 	<section class="my-6 p-6 border border-emerald-400 w-full mx-auto rounded-lg bg-gray-900">
 		<h2 class="text-2xl font-bold text-emerald-400 mb-6">Connection Requests</h2>
-		{{ if .Data.PendingConnectionRequests }}
-		<ul class="space-y-4">
-			{{ range $row, $role := .Data.PendingConnectionRequests }}
-			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-800 transition-colors pending-request">
-				<div class="flex-1">
-					<h4 class="text-lg font-semibold text-white">{{ $row.Email }}</h4>
-					<p class="text-sm text-gray-400">Wants to be your <span class="text-emerald-400">{{ $role }}</span></p>
-				</div>
-				<div class="flex gap-3 w-full sm:w-auto">
-					{{ template "secondaryButton" (dict "Text" "Accept" "HtxPost" (printf "/createConnection/%d/%d" $row.SenderID $row.ReceiverID) "Class" "flex-1 sm:flex-initial") }}
-					{{ template "secondaryButton" (dict "Text" "Reject" "Color" "red" "HtxDelete" (printf "/deleteConnectionRequest/%d/%d" $row.SenderID $row.ReceiverID) "HtxTarget" ".pending-request" "Class" "flex-1 sm:flex-initial") }}
-				</div>
-			</li>
-			{{ end }}
-		</ul>
-		{{ else }}
-		{{ template "emptyState" (dict "Message" "No pending connection requests.") }}
-		{{ end }}
+		{{ template "pendingRequestsList" .Data }}
 	</section>
 </div>
 {{ end }}
 
-{{ define "activeConnection" }}
-
-<div>
-	<h4>{{ .Data.ActiveConnectionUsername }}</h4>
-	<h4>Your {{ .Data.ActiveConnectionRole }}</h4>
+{{ define "pendingRequestsList" }}
+{{ if .PendingConnectionRequests }}
+<div id="connections-list" hx-target="#connections-list" hx-swap="outerHTML">
+<ul class="space-y-4">
+	{{ range .PendingConnectionRequests }}
+	<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-800 transition-colors">
+		<div class="flex-1">
+			<h4 class="text-lg font-semibold text-white">{{ .Email }}</h4>
+			<p class="text-sm text-gray-400">Wants to be your <span class="text-emerald-400">{{ .Role }}</span></p>
+		</div>
+		<div class="flex gap-3 w-full sm:w-auto">
+			{{ template "secondaryButton" (dict "Text" "Accept" "HtxPost" (printf "/acceptConnectionRequest/%d" .RequestID) "HtxTarget" "#connections-content" "Class" "flex-1 sm:flex-initial") }}
+			{{ template "secondaryButton" (dict "Text" "Reject" "Color" "red" "HtxPost" (printf "/rejectConnectionRequest/%d" .RequestID) "HtxTarget" "#connections-content" "Class" "flex-1 sm:flex-initial") }}
+		</div>
+	</li>
+	{{ end }}
+</ul>
 </div>
+{{ else }}
+{{ template "emptyState" (dict "Message" "No pending connection requests.") }}
+{{ end }}
 {{ end }}

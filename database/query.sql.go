@@ -7,10 +7,27 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
-const createConnection = `-- name: CreateConnection :exec
-INSERT INTO connections (manager_id, worker_id) VALUES (?, ?)
+const clearActiveConnectionIfMatch = `-- name: ClearActiveConnectionIfMatch :exec
+UPDATE users 
+SET active_connection_id = NULL 
+WHERE user_id = ? AND active_connection_id = ?
+`
+
+type ClearActiveConnectionIfMatchParams struct {
+	UserID             int64
+	ActiveConnectionID sql.NullInt64
+}
+
+func (q *Queries) ClearActiveConnectionIfMatch(ctx context.Context, arg ClearActiveConnectionIfMatchParams) error {
+	_, err := q.db.ExecContext(ctx, clearActiveConnectionIfMatch, arg.UserID, arg.ActiveConnectionID)
+	return err
+}
+
+const createConnection = `-- name: CreateConnection :one
+INSERT INTO connections (manager_id, worker_id) VALUES (?, ?) RETURNING connection_id
 `
 
 type CreateConnectionParams struct {
@@ -18,9 +35,11 @@ type CreateConnectionParams struct {
 	WorkerID  int64
 }
 
-func (q *Queries) CreateConnection(ctx context.Context, arg CreateConnectionParams) error {
-	_, err := q.db.ExecContext(ctx, createConnection, arg.ManagerID, arg.WorkerID)
-	return err
+func (q *Queries) CreateConnection(ctx context.Context, arg CreateConnectionParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createConnection, arg.ManagerID, arg.WorkerID)
+	var connection_id int64
+	err := row.Scan(&connection_id)
+	return connection_id, err
 }
 
 const createRequest = `-- name: CreateRequest :exec
@@ -82,9 +101,27 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 	return user_id, err
 }
 
+const deactivateConnectionRequest = `-- name: DeactivateConnectionRequest :exec
+UPDATE connection_requests SET is_active = 0 WHERE request_id = ?
+`
+
+func (q *Queries) DeactivateConnectionRequest(ctx context.Context, requestID int64) error {
+	_, err := q.db.ExecContext(ctx, deactivateConnectionRequest, requestID)
+	return err
+}
+
+const deleteConnection = `-- name: DeleteConnection :exec
+DELETE FROM connections WHERE connection_id = ?
+`
+
+func (q *Queries) DeleteConnection(ctx context.Context, connectionID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteConnection, connectionID)
+	return err
+}
+
 const deleteConnectionRequestByUserIds = `-- name: DeleteConnectionRequestByUserIds :exec
-DELETE FROM connection_requests 
-WHERE (sender_id = ? AND receiver_id = ?) 
+DELETE FROM connection_requests
+WHERE (sender_id = ? AND receiver_id = ?)
    OR (sender_id = ? AND receiver_id = ?)
 `
 
@@ -114,6 +151,41 @@ func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
 	return err
 }
 
+const getAccountPageData = `-- name: GetAccountPageData :one
+SELECT 
+    u.email,
+    u.username,
+    u.created_at,
+    u.is_member,
+    (SELECT COUNT(*) FROM connections WHERE ?1 IN (manager_id, worker_id)) AS connection_count,
+    (SELECT COUNT(*) FROM connection_requests WHERE receiver_id = ?1 AND is_active = 1) AS pending_request_count
+FROM users u
+WHERE u.user_id = ?1
+`
+
+type GetAccountPageDataRow struct {
+	Email               string
+	Username            string
+	CreatedAt           sql.NullTime
+	IsMember            int64
+	ConnectionCount     int64
+	PendingRequestCount int64
+}
+
+func (q *Queries) GetAccountPageData(ctx context.Context, managerID int64) (GetAccountPageDataRow, error) {
+	row := q.db.QueryRowContext(ctx, getAccountPageData, managerID)
+	var i GetAccountPageDataRow
+	err := row.Scan(
+		&i.Email,
+		&i.Username,
+		&i.CreatedAt,
+		&i.IsMember,
+		&i.ConnectionCount,
+		&i.PendingRequestCount,
+	)
+	return i, err
+}
+
 const getActiveConnectionDetails = `-- name: GetActiveConnectionDetails :one
 SELECT worker_id, manager_id
 FROM connections
@@ -138,9 +210,9 @@ FROM users
 WHERE user_id= ?
 `
 
-func (q *Queries) GetActiveConnectionId(ctx context.Context, userID int64) (int64, error) {
+func (q *Queries) GetActiveConnectionId(ctx context.Context, userID int64) (sql.NullInt64, error) {
 	row := q.db.QueryRowContext(ctx, getActiveConnectionId, userID)
-	var active_connection_id int64
+	var active_connection_id sql.NullInt64
 	err := row.Scan(&active_connection_id)
 	return active_connection_id, err
 }
@@ -214,6 +286,35 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getConnectionRequestById = `-- name: GetConnectionRequestById :one
+SELECT request_id, sender_id, receiver_id, suggested_manager_id, suggested_worker_id, is_active
+FROM connection_requests
+WHERE request_id = ?
+`
+
+type GetConnectionRequestByIdRow struct {
+	RequestID          int64
+	SenderID           int64
+	ReceiverID         int64
+	SuggestedManagerID int64
+	SuggestedWorkerID  int64
+	IsActive           int64
+}
+
+func (q *Queries) GetConnectionRequestById(ctx context.Context, requestID int64) (GetConnectionRequestByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getConnectionRequestById, requestID)
+	var i GetConnectionRequestByIdRow
+	err := row.Scan(
+		&i.RequestID,
+		&i.SenderID,
+		&i.ReceiverID,
+		&i.SuggestedManagerID,
+		&i.SuggestedWorkerID,
+		&i.IsActive,
+	)
+	return i, err
 }
 
 const getConnectionsById = `-- name: GetConnectionsById :many
@@ -365,11 +466,16 @@ func (q *Queries) GetUsernameByUserId(ctx context.Context, userID int64) (string
 }
 
 const updateActiveConnection = `-- name: UpdateActiveConnection :exec
-UPDATE users SET active_connection_id = ?
+UPDATE users SET active_connection_id = ? WHERE user_id = ?
 `
 
-func (q *Queries) UpdateActiveConnection(ctx context.Context, activeConnectionID int64) error {
-	_, err := q.db.ExecContext(ctx, updateActiveConnection, activeConnectionID)
+type UpdateActiveConnectionParams struct {
+	ActiveConnectionID sql.NullInt64
+	UserID             int64
+}
+
+func (q *Queries) UpdateActiveConnection(ctx context.Context, arg UpdateActiveConnectionParams) error {
+	_, err := q.db.ExecContext(ctx, updateActiveConnection, arg.ActiveConnectionID, arg.UserID)
 	return err
 }
 
