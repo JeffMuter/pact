@@ -1,0 +1,17 @@
+{{ define "sectionHeader" }}
+<div class="flex items-start gap-4 mb-6">
+  {{ if .Icon }}
+  <div class="avatar placeholder">
+    <div class="bg-emerald-400 text-gray-900 rounded-full w-14">
+      <span class="text-lg font-bold">{{ .Icon }}</span>
+    </div>
+  </div>
+  {{ end }}
+  <div class="flex-1">
+    <h2 class="card-title text-2xl text-white mb-1">{{ .Title }}</h2>
+    {{ if .Description }}
+    <p class="text-sm text-gray-400">{{ .Description }}</p>
+    {{ end }}
+  </div>
+</div>
+{{ end }}

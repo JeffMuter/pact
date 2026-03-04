@@ -1,0 +1,18 @@
+{{ define "formGroup" }}
+<div class="flex flex-col">
+  <label for="{{ .ID }}" class="text-emerald-400 font-semibold mb-2">{{ .Label }}</label>
+  {{ if eq .Type "select" }}
+  <select id="{{ .ID }}" name="{{ .Name }}"{{ if .Required }} required{{ end }} class="p-3 bg-black rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    {{ if .Placeholder }}<option value="" disabled selected>{{ .Placeholder }}</option>{{ end }}
+    {{ range .Options }}
+    <option value="{{ .Value }}">{{ .Label }}</option>
+    {{ end }}
+  </select>
+  {{ else if eq .Type "textarea" }}
+  <textarea id="{{ .ID }}" name="{{ .Name }}"{{ if .Required }} required{{ end }} placeholder="{{ .Placeholder }}" class="p-3 bg-black rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"></textarea>
+  {{ else }}
+  <input id="{{ .ID }}" class="p-3 bg-black rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400" 
+    type="{{ if .Type }}{{ .Type }}{{ else }}text{{ end }}" name="{{ .Name }}"{{ if .Required }} required{{ end }} placeholder="{{ .Placeholder }}">
+  {{ end }}
+</div>
+{{ end }}

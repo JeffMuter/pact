@@ -1,0 +1,7 @@
+{{ define "sectionCard" }}
+<div class="card bg-gray-900 border border-gray-700 shadow-lg hover:shadow-emerald-400/20 hover:border-emerald-400 transition-all duration-300">
+  <div class="card-body p-8">
+    {{ block "cardContent" . }}{{ end }}
+  </div>
+</div>
+{{ end }}

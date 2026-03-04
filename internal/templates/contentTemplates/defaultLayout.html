@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="htmx-config" content='{"refreshOnHistoryMiss": true, "historyCacheSize": 10}' />
   <link href="/static/index.css" rel="stylesheet" />
   <title>{{ .Data.Title }}</title>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
@@ -19,7 +20,7 @@
   {{ else }}
   {{ template "guestNavbar" . }}
   {{ end }}
-  <main id="mainElement" class="px-4 py-6 bg-zinc-950 text-white">
+  <main id="mainElement" hx-history-elt class="px-4 py-6 bg-zinc-950 text-white">
     {{ block "content" . }}{{ end }}
   </main>
   {{ template "footer" . }}

@@ -105,6 +105,15 @@ func (q *Queries) DeleteConnectionRequestByUserIds(ctx context.Context, arg Dele
 	return err
 }
 
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE user_id = ?
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, userID)
+	return err
+}
+
 const getActiveConnectionDetails = `-- name: GetActiveConnectionDetails :one
 SELECT worker_id, manager_id
 FROM connections
@@ -137,33 +146,35 @@ func (q *Queries) GetActiveConnectionId(ctx context.Context, userID int64) (int6
 }
 
 const getActiveConnectionUserDetails = `-- name: GetActiveConnectionUserDetails :one
-SELECT u.user_id, u.username, 
-  CASE 
-    WHEN c.manager_id = ? THEN 'worker'
-    ELSE 'manager'
-  END AS role
-FROM users u
-JOIN connections c ON u.user_id = CASE
-  WHEN c.manager_id = ? THEN c.worker_id
-  ELSE c.manager_id
-END
+SELECT 
+  CASE WHEN c.manager_id = ? THEN c.worker_id ELSE c.manager_id END AS user_id,
+  u.username,
+  CASE WHEN c.manager_id = ? THEN 'worker' ELSE 'manager' END AS role
+FROM connections c
+JOIN users u ON u.user_id = CASE WHEN c.manager_id = ? THEN c.worker_id ELSE c.manager_id END
 WHERE c.connection_id = (SELECT active_connection_id FROM users WHERE users.user_id = ?)
 `
 
 type GetActiveConnectionUserDetailsParams struct {
 	ManagerID   int64
 	ManagerID_2 int64
+	ManagerID_3 int64
 	UserID      int64
 }
 
 type GetActiveConnectionUserDetailsRow struct {
-	UserID   int64
+	UserID   interface{}
 	Username string
 	Role     string
 }
 
 func (q *Queries) GetActiveConnectionUserDetails(ctx context.Context, arg GetActiveConnectionUserDetailsParams) (GetActiveConnectionUserDetailsRow, error) {
-	row := q.db.QueryRowContext(ctx, getActiveConnectionUserDetails, arg.ManagerID, arg.ManagerID_2, arg.UserID)
+	row := q.db.QueryRowContext(ctx, getActiveConnectionUserDetails,
+		arg.ManagerID,
+		arg.ManagerID_2,
+		arg.ManagerID_3,
+		arg.UserID,
+	)
 	var i GetActiveConnectionUserDetailsRow
 	err := row.Scan(&i.UserID, &i.Username, &i.Role)
 	return i, err

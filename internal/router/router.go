@@ -14,20 +14,16 @@ func Router() *http.ServeMux {
 
 	// home page: page seen by logged in users
 	mux.HandleFunc("GET /", auth.AuthMiddleware(pages.ServeBucketsPage))
-	mux.HandleFunc("GET /bucketContent", auth.AuthMiddleware(pages.ServeBucketsContent))
 
 	// guest page: the page non-logged-in users see
-	mux.HandleFunc("GET /description", pages.ServeDescriptionPage)
-	mux.HandleFunc("GET /descriptionContent", pages.ServeDescriptionContent)
+	mux.HandleFunc("GET /description", auth.OptionalAuthMiddleware(pages.ServeDescriptionPage))
 
 	// log in
 	mux.HandleFunc("GET /loginPage", pages.ServeLoginPage)
-	mux.HandleFunc("GET /loginForm", pages.ServeLoginForm)
 	mux.HandleFunc("POST /login", pages.LoginFormHandler)
 
 	// registration
 	mux.HandleFunc("GET /registerPage", pages.ServeRegistrationPage)
-	mux.HandleFunc("GET /registerForm", pages.ServeRegistrationForm)
 	mux.HandleFunc("POST /register", pages.RegisterHandler)
 
 	mux.HandleFunc("GET /logout", auth.Logout)
@@ -38,13 +34,16 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("GET /memberNavbar", auth.AuthMiddleware(pages.ServeMemberNavbar))
 
 	// account page
-	mux.HandleFunc("GET /accountPage", auth.AuthMiddleware(pages.ServeAccountPage))
-	mux.HandleFunc("GET /accountContent", auth.AuthMiddleware(pages.ServeAccountContent))
+	mux.HandleFunc("GET /account", auth.AuthMiddleware(pages.ServeAccountPage))
+	mux.HandleFunc("DELETE /deleteAccount", auth.AuthMiddleware(pages.DeleteAccountHandler))
 
-	// stripe
-	mux.HandleFunc("GET /stripePage", auth.AuthMiddleware(stripe.ServeMembershipPage))
-	mux.HandleFunc("GET /stripeForm", auth.AuthMiddleware(stripe.ServeStripeForm))
+	// stripe/membership
+	mux.HandleFunc("GET /stripe", auth.AuthMiddleware(stripe.ServeMembershipPage))
 	mux.HandleFunc("POST /createSession", auth.AuthMiddleware(stripe.HandleCreateCheckoutSession))
+
+	// buckets/home pages
+	mux.HandleFunc("GET /buckets", auth.AuthMiddleware(pages.ServeBucketsPage))
+	mux.HandleFunc("GET /home", auth.AuthMiddleware(pages.ServeHomePage))
 
 	// connections
 	mux.HandleFunc("GET /connectionsContent", auth.AuthMiddleware(connections.ServeConnectionsContent))

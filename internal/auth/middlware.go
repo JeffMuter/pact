@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"pact/database"
 )
@@ -54,6 +55,42 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, "userID", userID)
 
 		// Call the next handler with the updated context
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+// OptionalAuthMiddleware checks auth status but doesn't redirect
+// Used for public pages that should show different content based on auth state
+func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		authStatus := "guest"
+		var userID int
+
+		cookie, err := r.Cookie("Bearer")
+		fmt.Printf("[OptionalAuth] Cookie lookup error: %v\n", err)
+		if err == nil {
+			fmt.Printf("[OptionalAuth] Cookie value present: %d chars\n", len(cookie.Value))
+			token := cookie.Value
+			userID, err = ValidateToken(token)
+			fmt.Printf("[OptionalAuth] ValidateToken error: %v, userID: %d\n", err, userID)
+			if err == nil {
+				queries := database.GetQueries()
+				isMember, err := queries.UserIsMemberById(ctx, int64(userID))
+				fmt.Printf("[OptionalAuth] UserIsMemberById error: %v, isMember: %d\n", err, isMember)
+				if err == nil {
+					if isMember == 1 {
+						authStatus = "member"
+					} else {
+						authStatus = "registered"
+					}
+				}
+			}
+		}
+
+		fmt.Printf("[OptionalAuth] Final authStatus: %s, userID: %d\n", authStatus, userID)
+		ctx = context.WithValue(ctx, "authStatus", authStatus)
+		ctx = context.WithValue(ctx, "userID", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }

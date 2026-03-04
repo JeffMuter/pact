@@ -157,7 +157,11 @@ func getActiveConnectionDetails(userId int) (int, string, string, error) {
 		return acId, acUsername, acRole, fmt.Errorf("error: getting active connection details from db, %w", err)
 	}
 
-	acId = int(row.UserID)
+	userIDInt64, ok := row.UserID.(int64)
+	if !ok {
+		return acId, acUsername, acRole, fmt.Errorf("error: userID type assertion failed")
+	}
+	acId = int(userIDInt64)
 	acUsername = row.Username
 	acRole = row.Role
 

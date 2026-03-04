@@ -1,0 +1,5 @@
+{{ define "primaryButton" }}
+<button class="btn btn-primary w-full bg-emerald-400 text-gray-900 hover:bg-emerald-500 border-0 font-bold text-base h-12{{ if .Class }} {{ .Class }}{{ end }}"{{ if .HtxGet }} hx-get="{{ .HtxGet }}"{{ end }}{{ if .HtxPost }} hx-post="{{ .HtxPost }}"{{ end }}{{ if .HtxPut }} hx-put="{{ .HtxPut }}"{{ end }}{{ if .HtxDelete }} hx-delete="{{ .HtxDelete }}"{{ end }}{{ if .HtxTarget }} hx-target="{{ .HtxTarget }}"{{ end }}{{ if .HtxSwap }} hx-swap="{{ .HtxSwap }}"{{ end }}>
+  {{ .Text }}
+</button>
+{{ end }}

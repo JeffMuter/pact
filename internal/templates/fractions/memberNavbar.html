@@ -4,11 +4,11 @@
 	<h2>Pact - Member</h2>
 	<div class="justify-end gap-4 ">
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/bucketContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">
+			href="/buckets" hx-get="/buckets" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			Buckets
 		</a>
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/accountContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">
+			href="/account" hx-get="/account" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			Account
 		</a>
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400" href="/logout">

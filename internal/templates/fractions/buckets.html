@@ -1,48 +1,50 @@
 {{ define "buckets" }}
-<h1>Buckets</h1>
-<section class="flex bg-red p-4 flex flex-col">
-	<h3>Todo</h3>
-	<ul>
-		<!-- for loop starts here over li -->
-		<li onclick="my_modal_2.showModal()" class="btn cursor-pointer bg-gray-400">
-			<h4>test title</h4>
-		</li>
-		<dialog id="my_modal_2" class="modal">
-			<div class="modal-box bg-gray-900 text-emerald-400">
-				<h3 class="text-lg font-bold">task title...</h3>
-				<p class="py-4">default decription lorem ipsum...</p>
-				<div class="flex justify-between gap-x-4">
-					<button
-						class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400">Video
-					</button>
-					<button
-						class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400">Image
-					</button>
-					<button
-						class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400">Text
-					</button>
-					<!-- need a way to make this know whether this task has the conditions validated by uploading requirement -->
-					<button
-						class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400">Complete
-					</button>
-				</div>
-			</div>
-			<form method="dialog" class="modal-backdrop">
-				<button>close</button>
-			</form>
-		</dialog>
-	</ul>
-</section>
+<div class="flex flex-col w-3/4 mx-auto">
+	{{ template "pageTitle" (dict "Title" "Buckets" "Subtitle" "Manage your task buckets and projects") }}
 
-<section>
-	<h3>In-Review</h3>
-</section>
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+		<!-- Todo Section -->
+		<section class="my-6 p-6 border border-emerald-400 w-full rounded-lg bg-gray-900">
+			<h3 class="text-2xl font-bold text-emerald-400 mb-6">To Do</h3>
+			<ul class="space-y-4">
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer" onclick="my_modal_2.showModal()">
+					<h4 class="text-lg font-semibold text-white">test title</h4>
+				</li>
+				<dialog id="my_modal_2" class="modal">
+					<div class="modal-box bg-gray-900 text-emerald-400">
+						<h3 class="text-lg font-bold">task title...</h3>
+						<p class="py-4">default decription lorem ipsum...</p>
+						<div class="flex justify-between gap-x-4">
+							{{ template "secondaryButton" (dict "Text" "Video" "Class" "flex-1") }}
+							{{ template "secondaryButton" (dict "Text" "Image" "Class" "flex-1") }}
+							{{ template "secondaryButton" (dict "Text" "Text" "Class" "flex-1") }}
+							{{ template "secondaryButton" (dict "Text" "Complete" "Class" "flex-1") }}
+						</div>
+					</div>
+					<form method="dialog" class="modal-backdrop">
+						<button>close</button>
+					</form>
+				</dialog>
+			</ul>
+		</section>
 
-<section>
-	<h3>Completed</h3>
-</section>
+		<!-- In-Review Section -->
+		<section class="my-6 p-6 border border-emerald-400 w-full rounded-lg bg-gray-900">
+			<h3 class="text-2xl font-bold text-emerald-400 mb-6">In Review</h3>
+			{{ template "emptyState" (dict "Message" "No tasks in review.") }}
+		</section>
 
-<section>
-	<h3>Failed</h3>
-</section>
+		<!-- Completed Section -->
+		<section class="my-6 p-6 border border-emerald-400 w-full rounded-lg bg-gray-900">
+			<h3 class="text-2xl font-bold text-emerald-400 mb-6">Completed</h3>
+			{{ template "emptyState" (dict "Message" "No completed tasks yet.") }}
+		</section>
+
+		<!-- Failed Section -->
+		<section class="my-6 p-6 border border-emerald-400 w-full rounded-lg bg-gray-900">
+			<h3 class="text-2xl font-bold text-emerald-400 mb-6">Failed</h3>
+			{{ template "emptyState" (dict "Message" "No failed tasks.") }}
+		</section>
+	</div>
+</div>
 {{ end }}

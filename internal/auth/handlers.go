@@ -32,7 +32,7 @@ func HandleLoginProcedure(w http.ResponseWriter, r *http.Request, user *database
 		Expires:  time.Now().Add(24 * time.Hour),
 	})
 	fmt.Println("cookie set in server...")
-	http.Redirect(w, r, "/homeContent", http.StatusSeeOther)
+	w.Header().Set("HX-Redirect", "/")
 }
 
 // Logout is a handler meant to alter the cookie to expire it, and reroute the user to a

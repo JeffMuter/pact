@@ -4,19 +4,15 @@
 	<h2>Pact - Registered</h2>
 	<div class="justify-end gap-4 ">
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/homeContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">
+			href="/home" hx-get="/home" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			Buckets
 		</a>
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/descriptionContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">
-			Description
-		</a>
-		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/stripeForm" hx-target="#mainElement" hx-swap="innerHTML" href="#">
+			href="/stripe" hx-get="/stripe" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			Membership
 		</a>
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			hx-get="/accountContent" hx-target="#mainElement" hx-swap="innerHTML" href="#">
+			href="/account" hx-get="/account" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			Account
 		</a>
 		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400" href="/logout">

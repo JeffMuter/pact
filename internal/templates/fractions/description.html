@@ -1,45 +1,84 @@
-{{ define "guest" }}
+{{ define "description" }}
 
 <!-- main hero & call to action -->
 <section class="flex flex-col w-3/4 mx-auto my-4 p-4 gap-4 rounded">
-	<h1 class="text-center">The Pact</h1>
-	<p>Empower your dynamic with structured task management for manager/worker relationships. Create, track, and
-		complete
-		tasks with customizablerewards and cons, bringing clarity and order to your unique connection(bond?)</p>
+	<h1 class="text-center text-4xl font-bold text-emerald-400">The Pact</h1>
+	<p class="text-lg text-gray-300">Empower your unique dynamics with structured task management. Whether you're managing a team, mentoring an individual, or working on collaborative projects, Pact brings clarity, accountability, and reward to every interaction.</p>
 	<div class="flex justify-center gap-16">
-		<button class="btn rounded text-emerald-600 bg-black p-2 duration-300 hover:border-emerald-400 hover:bg-black"
-			hx-get="/registerForm" hx-target="#mainElement" hx-swap="innerHTML">Create
-			Account</button>
-		<button class="btn rounded text-emerald-600 bg-black p-2 duration-300 hover:border-emerald-400 hover:bg-black"
-			hx-get="/stripeForm" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="stripePage"
-			href="#">
-			Become a Member
-		</button>
+		{{ template "secondaryButton" (dict "Text" "Create Account" "HtxGet" "/registerForm" "HtxTarget" "#mainElement" "HtxSwap" "innerHTML" "Class" "w-fit") }}
+		{{ template "secondaryButton" (dict "Text" "Become a Member" "HtxGet" "/stripeForm" "HtxTarget" "#mainElement" "HtxSwap" "innerHTML" "Class" "w-fit") }}
 	</div>
 </section>
 
+<!-- What is Pact section -->
+<section class="my-6 p-6 border border-emerald-400 w-3/4 mx-auto rounded-lg bg-gray-900">
+	<h2 class="text-2xl font-bold text-emerald-400 mb-4">What is Pact?</h2>
+	<p class="text-gray-300 mb-4">Pact is a dynamic task management platform designed for relationships built on clear expectations and mutual accountability. It transforms the way managers and workers collaborate by providing:</p>
+	<ul class="list-disc list-inside space-y-2 text-gray-300 mb-4">
+		<li><strong>Customizable Buckets:</strong> Organize tasks by category, project, or objective</li>
+		<li><strong>Clear Requirements:</strong> Specify exactly what needs to be completed—be it word count, multimedia assets, or specific deliverables</li>
+		<li><strong>Task Tracking:</strong> Real-time visibility into progress and completion status</li>
+		<li><strong>Reward System:</strong> Incentivize work with customizable rewards and consequences</li>
+		<li><strong>Secure Submissions:</strong> Workers submit completed tasks for manager review with encrypted storage</li>
+	</ul>
+</section>
+
 <!-- dashboard for managers -->
-<!-- left is a paragraph describing manager management of buckets: right is a vid of it -->
-<section class="my-4 p-2 card border border-emerald-400">
-	<h2>Managers</h2>
-	<p>Create a task, set the requirements (1000k words, image, video), and review submitted task completions.</p>
-	<!-- video goes here -->
+<section class="my-6 p-6 border border-emerald-400 w-3/4 mx-auto rounded-lg bg-gray-900">
+	<h2 class="text-2xl font-bold text-emerald-400 mb-4">For Managers</h2>
+	<div class="space-y-4">
+		<p class="text-gray-300">Take control of your team or individual relationships. Pact empowers you to:</p>
+		<ul class="list-disc list-inside space-y-2 text-gray-300">
+			<li>Create and organize tasks across customizable buckets</li>
+			<li>Define specific requirements (deliverables, deadlines, quality standards)</li>
+			<li>Review and approve completed work submissions</li>
+			<li>Provide feedback and track performance</li>
+			<li>Set up reward structures that motivate and engage</li>
+		</ul>
+		<p class="text-gray-300 mt-4"><strong>Use cases:</strong> Team project management, mentorship tracking, performance incentives, contract work oversight, and personal accountability partnerships.</p>
+	</div>
 </section>
 
 <!-- dashboard for workers -->
-<section class="my-4 p-2 card border border-emerald-400">
-	<!-- video goes here -->
-	<h2>Workers</h2>
-	<p>Easily see tasks, mark completed for manager review.</p>
+<section class="my-6 p-6 border border-emerald-400 w-3/4 mx-auto rounded-lg bg-gray-900">
+	<h2 class="text-2xl font-bold text-emerald-400 mb-4">For Workers</h2>
+	<div class="space-y-4">
+		<p class="text-gray-300">Stay organized and on track. Pact makes it easy to:</p>
+		<ul class="list-disc list-inside space-y-2 text-gray-300">
+			<li>View all assigned tasks in one place</li>
+			<li>Understand exactly what's required before starting</li>
+			<li>Submit completed work with supporting materials</li>
+			<li>Track approval status and feedback from managers</li>
+			<li>Earn rewards for consistently meeting expectations</li>
+		</ul>
+		<p class="text-gray-300 mt-4"><strong>Benefits:</strong> Clear expectations, transparent progress tracking, fair evaluation, and tangible rewards for your effort.</p>
+	</div>
 </section>
 
 <!-- section on data privacy -->
-<section class="my-4 p-2 card border border-emerald-400">
-	<h2>Your Information Must Remain Secure</h2>
-	<p>For many reasons, your privacy is of utmost importance. The use of Stripe, as well as our encryption
-		methodology and secure storage of your tasks & submissions all serve to protect your privacy, and online
-		anonymity.
-	</p>
+<section class="my-6 p-6 border border-emerald-400 w-3/4 mx-auto rounded-lg bg-gray-900">
+	<h2 class="text-2xl font-bold text-emerald-400 mb-4">Your Privacy & Security Matter</h2>
+	<div class="space-y-4">
+		<p class="text-gray-300">We take your information security seriously. Pact protects you through:</p>
+		<ul class="list-disc list-inside space-y-2 text-gray-300">
+			<li><strong>Stripe Integration:</strong> Secure payment processing without storing sensitive financial data</li>
+			<li><strong>Encryption:</strong> End-to-end encryption for task submissions and sensitive data</li>
+			<li><strong>Secure Storage:</strong> Your data is encrypted at rest and protected from unauthorized access</li>
+			<li><strong>Privacy First:</strong> We never share your personal information with third parties</li>
+		</ul>
+	</div>
+</section>
+
+<!-- Getting Started section -->
+<section class="my-6 p-6 border border-emerald-400 w-3/4 mx-auto rounded-lg bg-gray-900">
+	<h2 class="text-2xl font-bold text-emerald-400 mb-4">Getting Started</h2>
+	<div class="space-y-4">
+		<p class="text-gray-300"><strong>Step 1:</strong> Create a free account to explore Pact's features and connect with others</p>
+		<p class="text-gray-300"><strong>Step 2:</strong> Establish connections with your team members or managers—build relationships with clear roles</p>
+		<p class="text-gray-300"><strong>Step 3:</strong> Set up your buckets, define tasks, and start managing expectations</p>
+		<p class="text-gray-300"><strong>Step 4:</strong> Upgrade to a membership to unlock advanced features and premium capabilities</p>
+		<p class="text-emerald-400 mt-4 text-sm">Ready to transform how you work? Create an account today or become a member to unlock full features.</p>
+	</div>
 </section>
 
 {{ end }}

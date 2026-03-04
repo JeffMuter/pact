@@ -1,16 +1,24 @@
 {{ define "relationships" }}
-<!--
-{{ range .Data.Requests }}
-// use data to display request details
-// modal to manage the request 'accept', or 'pact'
-{{ end }}
-// display info on existing relationship, if one exists.
--->
-<section class="bg-gray-900 text-white font-bold py-2 px-4 rounded">
-	<h2 class="">Pairing Name Here</h2>
-	<button class="rounded-full bg-red-300 hover:bg-red-400">Terminate Pact</button>
-</section>
+<div class="flex flex-col w-3/4 mx-auto">
+	{{ template "pageTitle" (dict "Title" "Relationships" "Subtitle" "View and manage your pacts") }}
 
-// when user clicks on existing relationship, can choose to 'break' the pact.
-
+	<section class="my-6 p-6 border border-emerald-400 w-full rounded-lg bg-gray-900">
+		<h2 class="text-2xl font-bold text-emerald-400 mb-6">Active Pacts</h2>
+		{{ if .Data.Relationships }}
+		<ul class="space-y-4">
+			{{ range .Data.Relationships }}
+			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-row justify-between items-center hover:bg-gray-800 transition-colors">
+				<div class="flex-1">
+					<h4 class="text-lg font-semibold text-white">{{ .PactName }}</h4>
+					<p class="text-sm text-gray-400">Established <span class="text-emerald-400">{{ .CreatedAt }}</span></p>
+				</div>
+				{{ template "secondaryButton" (dict "Text" "Manage" "Color" "red" "Class" "text-red") }}
+			</li>
+			{{ end }}
+		</ul>
+		{{ else }}
+		{{ template "emptyState" (dict "Message" "No active pacts. Create a connection to establish a pact.") }}
+		{{ end }}
+	</section>
+</div>
 {{ end }}

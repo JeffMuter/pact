@@ -70,3 +70,6 @@ SELECT
 FROM connections c
 JOIN users u ON u.user_id = CASE WHEN c.manager_id = ? THEN c.worker_id ELSE c.manager_id END
 WHERE c.connection_id = (SELECT active_connection_id FROM users WHERE users.user_id = ?);
+
+-- name: DeleteUser :exec
+DELETE FROM users WHERE user_id = ?;

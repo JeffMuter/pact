@@ -71,11 +71,28 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeMembershipPage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("membership page handler ran")
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("error getting godotenv to load in serve membership page...")
+		http.Error(w, "Configuration error", http.StatusInternalServerError)
+		return
+	}
+	
+	publishableId := os.Getenv("STRIPE_PUBLISHABLE_KEY")
+	
 	data := pages.TemplateData{
 		Data: map[string]any{
-			"Title": "Membership",
+			"Title":                "Membership",
+			"StripePublishableKey": publishableId,
 		}}
-	fmt.Println("membership page handler ran")
+	
+	// Check if this is an HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		pages.RenderTemplateFraction(w, "stripeForm", data)
+		return
+	}
+	
 	pages.RenderLayoutTemplate(w, r, "stripePage", data)
 }
 
@@ -135,24 +152,6 @@ func HandleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 		"sessionId":            session.ID,
 		"stripePublishableKey": publishableId,
 	})
-}
-
-func ServeStripeForm(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("serving stripe form")
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("error getting godotenv to load in serve stripe form...")
-		return
-	}
-	publishableId := os.Getenv("STRIPE_PUBLISHABLE_KEY")
-	fmt.Println("serve stripe form publishable id: " + publishableId)
-	data := pages.TemplateData{
-		Data: map[string]any{
-			"Title":                "Membership",
-			"StripePublishableKey": publishableId,
-		},
-	}
-	pages.RenderTemplateFraction(w, "stripeForm", data)
 }
 
 func validateSubscriptionStatus(*database.User) error {

@@ -10,6 +10,27 @@ import (
 	"text/template"
 )
 
+var funcMap = template.FuncMap{
+	"dict": func(values ...interface{}) (map[string]interface{}, error) {
+		if len(values)%2 != 0 {
+			return nil, fmt.Errorf("dict requires an even number of arguments")
+		}
+		dict := make(map[string]interface{})
+		for i := 0; i < len(values); i += 2 {
+			key, ok := values[i].(string)
+			if !ok {
+				return nil, fmt.Errorf("dict keys must be strings")
+			}
+			dict[key] = values[i+1]
+		}
+		return dict, nil
+	},
+	"slice": func(values ...interface{}) []interface{} {
+		return values
+	},
+	"printf": fmt.Sprintf,
+}
+
 type TemplateConstruct struct {
 	layouts   map[string]*template.Template
 	fractions map[string]*template.Template
@@ -23,33 +44,43 @@ func InitTemplates() error {
 		fractions: make(map[string]*template.Template),
 	}
 
-	// Parse the default layout first
-	defaultLayout, err := template.ParseFiles("./internal/templates/contentTemplates/defaultLayout.html")
-	if err != nil {
-		return fmt.Errorf("error parsing default layout: %w", err)
-	}
 
-	// Parse all fraction templates
+
+	// Parse all fraction templates into one master template
 	fractions, err := filepath.Glob("./internal/templates/fractions/*.html")
 	if err != nil {
 		return fmt.Errorf("error globbing fractions: %w", err)
 	}
 
-	// Parse fractions and add them to both layouts and fractions maps
+	// Create a master template with all fractions
+	masterFractions := template.New("master").Funcs(funcMap)
+	for _, fraction := range fractions {
+		_, err := masterFractions.ParseFiles(fraction)
+		if err != nil {
+			return fmt.Errorf("error parsing fraction %s into master: %w", fraction, err)
+		}
+	}
+
+	// For each fraction, create a template that includes all fractions
 	for _, fraction := range fractions {
 		name := strings.TrimSuffix(filepath.Base(fraction), ".html")
 
-		// Parse the fraction template
-		tmpl, err := template.Must(defaultLayout.Clone()).ParseFiles(fraction)
+		// Clone the master fractions (which has everything)
+		tmpl, err := masterFractions.Clone()
 		if err != nil {
-			return fmt.Errorf("error parsing fraction %s: %w", name, err)
+			return fmt.Errorf("error cloning master for fraction %s: %w", name, err)
 		}
 
-		// Add to fractions map
-		tmplConstruct.fractions[name] = tmpl
+		// Debug: print available templates
+		if name == "description" {
+			fmt.Printf("Templates available for description: %d\n", len(tmpl.Templates()))
+			for _, t := range tmpl.Templates() {
+				fmt.Printf("  - %s\n", t.Name())
+			}
+		}
 
-		// Add to layouts map (each fraction can also be rendered as a full page)
-		tmplConstruct.layouts[name] = tmpl
+		// Store in fractions map
+		tmplConstruct.fractions[name] = tmpl
 	}
 
 	// Parse additional layout templates
@@ -64,8 +95,17 @@ func InitTemplates() error {
 			continue // Skip the default layout as we've already parsed it
 		}
 
-		// Clone the default layout and add the specific layout template
-		tmpl, err := template.Must(defaultLayout.Clone()).ParseFiles(layout)
+		// Create a new template with defaultLayout
+		tmpl := template.New("layoutTemplate").Funcs(funcMap)
+		
+		// Parse defaultLayout first
+		_, err := tmpl.ParseFiles("./internal/templates/contentTemplates/defaultLayout.html")
+		if err != nil {
+			return fmt.Errorf("error parsing defaultLayout: %w", err)
+		}
+
+		// Parse the specific layout file (which defines "content" block)
+		_, err = tmpl.ParseFiles(layout)
 		if err != nil {
 			return fmt.Errorf("error parsing layout %s: %w", name, err)
 		}
