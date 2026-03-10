@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -29,6 +30,18 @@ var funcMap = template.FuncMap{
 		return values
 	},
 	"printf": fmt.Sprintf,
+	"parseJSON": func(jsonStr string) []string {
+		var result []string
+		if jsonStr == "" || jsonStr == "null" {
+			return result
+		}
+		err := json.Unmarshal([]byte(jsonStr), &result)
+		if err != nil {
+			log.Printf("Error parsing JSON: %v", err)
+			return result
+		}
+		return result
+	},
 }
 
 type TemplateConstruct struct {
@@ -126,7 +139,7 @@ func InitTemplates() error {
 	return nil
 }
 
-func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
+func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName string, data interface{}) {
 	// Retrieve and validate authStatus from context
 	authStatus, err := auth.GetAuthStatusFromContext(r.Context())
 	if err != nil {
@@ -134,7 +147,12 @@ func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName s
 		// Default to guest if there's an error
 		authStatus = "guest"
 	}
-	data.Data["AuthStatus"] = authStatus
+	if td, ok := data.(TemplateData); ok {
+		td.Data["AuthStatus"] = authStatus
+		data = td
+	} else if bd, ok := data.(interface{ GetData() map[string]any }); ok {
+		bd.GetData()["AuthStatus"] = authStatus
+	}
 
 	log.Printf("authStatus set in template data: %v", authStatus)
 
@@ -155,7 +173,7 @@ func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName s
 	}
 }
 
-func RenderTemplateFraction(w http.ResponseWriter, templateName string, data TemplateData) {
+func RenderTemplateFraction(w http.ResponseWriter, templateName string, data interface{}) {
 	fmt.Println("Rendering fraction:", templateName)
 	tmpl, ok := tmplConstruct.fractions[templateName]
 	if !ok {

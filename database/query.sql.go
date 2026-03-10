@@ -8,7 +8,76 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
+
+const addWorkerPoints = `-- name: AddWorkerPoints :exec
+UPDATE connections SET worker_points = worker_points + ? WHERE connection_id = ?
+`
+
+type AddWorkerPointsParams struct {
+	WorkerPoints int64
+	ConnectionID int64
+}
+
+func (q *Queries) AddWorkerPoints(ctx context.Context, arg AddWorkerPointsParams) error {
+	_, err := q.db.ExecContext(ctx, addWorkerPoints, arg.WorkerPoints, arg.ConnectionID)
+	return err
+}
+
+const assignTask = `-- name: AssignTask :one
+
+INSERT INTO assigned_tasks (
+    task_id, connection_id, worker_id, type, points,
+    duration_minutes, due_time, requires_image, num_images_required, requires_video, num_videos_required,
+    requires_audio, num_audio_required, min_word_count, punishment_task_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING assigned_task_id
+`
+
+type AssignTaskParams struct {
+	TaskID            int64
+	ConnectionID      int64
+	WorkerID          int64
+	Type              string
+	Points            int64
+	DurationMinutes   int64
+	DueTime           time.Time
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	PunishmentTaskID  sql.NullInt64
+}
+
+// =====================
+// ASSIGNED TASKS
+// =====================
+func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, assignTask,
+		arg.TaskID,
+		arg.ConnectionID,
+		arg.WorkerID,
+		arg.Type,
+		arg.Points,
+		arg.DurationMinutes,
+		arg.DueTime,
+		arg.RequiresImage,
+		arg.NumImagesRequired,
+		arg.RequiresVideo,
+		arg.NumVideosRequired,
+		arg.RequiresAudio,
+		arg.NumAudioRequired,
+		arg.MinWordCount,
+		arg.PunishmentTaskID,
+	)
+	var assigned_task_id int64
+	err := row.Scan(&assigned_task_id)
+	return assigned_task_id, err
+}
 
 const clearActiveConnectionIfMatch = `-- name: ClearActiveConnectionIfMatch :exec
 UPDATE users 
@@ -24,6 +93,33 @@ type ClearActiveConnectionIfMatchParams struct {
 func (q *Queries) ClearActiveConnectionIfMatch(ctx context.Context, arg ClearActiveConnectionIfMatchParams) error {
 	_, err := q.db.ExecContext(ctx, clearActiveConnectionIfMatch, arg.UserID, arg.ActiveConnectionID)
 	return err
+}
+
+const completeAssignedTask = `-- name: CompleteAssignedTask :exec
+UPDATE assigned_tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP
+WHERE assigned_task_id = ?
+`
+
+func (q *Queries) CompleteAssignedTask(ctx context.Context, assignedTaskID int64) error {
+	_, err := q.db.ExecContext(ctx, completeAssignedTask, assignedTaskID)
+	return err
+}
+
+const countAssignedTasksByConnectionAndStatus = `-- name: CountAssignedTasksByConnectionAndStatus :one
+SELECT COUNT(*) FROM assigned_tasks
+WHERE connection_id = ? AND status = ?
+`
+
+type CountAssignedTasksByConnectionAndStatusParams struct {
+	ConnectionID int64
+	Status       string
+}
+
+func (q *Queries) CountAssignedTasksByConnectionAndStatus(ctx context.Context, arg CountAssignedTasksByConnectionAndStatusParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAssignedTasksByConnectionAndStatus, arg.ConnectionID, arg.Status)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createConnection = `-- name: CreateConnection :one
@@ -84,6 +180,96 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 	return err
 }
 
+const createSubmission = `-- name: CreateSubmission :one
+
+INSERT INTO task_submissions (assigned_task_id, submission_text, image_paths, video_paths, audio_paths)
+VALUES (?, ?, ?, ?, ?)
+RETURNING submission_id
+`
+
+type CreateSubmissionParams struct {
+	AssignedTaskID int64
+	SubmissionText sql.NullString
+	ImagePaths     sql.NullString
+	VideoPaths     sql.NullString
+	AudioPaths     sql.NullString
+}
+
+// =====================
+// TASK SUBMISSIONS
+// =====================
+func (q *Queries) CreateSubmission(ctx context.Context, arg CreateSubmissionParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createSubmission,
+		arg.AssignedTaskID,
+		arg.SubmissionText,
+		arg.ImagePaths,
+		arg.VideoPaths,
+		arg.AudioPaths,
+	)
+	var submission_id int64
+	err := row.Scan(&submission_id)
+	return submission_id, err
+}
+
+const createTask = `-- name: CreateTask :one
+
+INSERT INTO tasks (
+    manager_id, title, description, type, default_points,
+    default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required,
+    requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked,
+    repeat_frequency, punishment_task_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING task_id
+`
+
+type CreateTaskParams struct {
+	ManagerID              int64
+	Title                  string
+	Description            sql.NullString
+	Type                   string
+	DefaultPoints          int64
+	DefaultDurationMinutes int64
+	RequiresImage          int64
+	NumImagesRequired      int64
+	RequiresVideo          int64
+	NumVideosRequired      int64
+	RequiresAudio          int64
+	NumAudioRequired       int64
+	MinWordCount           sql.NullInt64
+	PointCost              sql.NullInt64
+	IsBookmarked           int64
+	RepeatFrequency        sql.NullString
+	PunishmentTaskID       sql.NullInt64
+}
+
+// =====================
+// TASK TEMPLATES
+// =====================
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createTask,
+		arg.ManagerID,
+		arg.Title,
+		arg.Description,
+		arg.Type,
+		arg.DefaultPoints,
+		arg.DefaultDurationMinutes,
+		arg.RequiresImage,
+		arg.NumImagesRequired,
+		arg.RequiresVideo,
+		arg.NumVideosRequired,
+		arg.RequiresAudio,
+		arg.NumAudioRequired,
+		arg.MinWordCount,
+		arg.PointCost,
+		arg.IsBookmarked,
+		arg.RepeatFrequency,
+		arg.PunishmentTaskID,
+	)
+	var task_id int64
+	err := row.Scan(&task_id)
+	return task_id, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?) returning user_id
 `
@@ -107,6 +293,33 @@ UPDATE connection_requests SET is_active = 0 WHERE request_id = ?
 
 func (q *Queries) DeactivateConnectionRequest(ctx context.Context, requestID int64) error {
 	_, err := q.db.ExecContext(ctx, deactivateConnectionRequest, requestID)
+	return err
+}
+
+const deductWorkerPoints = `-- name: DeductWorkerPoints :exec
+UPDATE connections SET worker_points = worker_points - ? WHERE connection_id = ?
+`
+
+type DeductWorkerPointsParams struct {
+	WorkerPoints int64
+	ConnectionID int64
+}
+
+func (q *Queries) DeductWorkerPoints(ctx context.Context, arg DeductWorkerPointsParams) error {
+	_, err := q.db.ExecContext(ctx, deductWorkerPoints, arg.WorkerPoints, arg.ConnectionID)
+	return err
+}
+
+const deleteAssignedTask = `-- name: DeleteAssignedTask :exec
+
+DELETE FROM assigned_tasks WHERE assigned_task_id = ?
+`
+
+// =====================
+// ASSIGNED TASK MANAGEMENT (manager)
+// =====================
+func (q *Queries) DeleteAssignedTask(ctx context.Context, assignedTaskID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteAssignedTask, assignedTaskID)
 	return err
 }
 
@@ -142,12 +355,36 @@ func (q *Queries) DeleteConnectionRequestByUserIds(ctx context.Context, arg Dele
 	return err
 }
 
+const deleteTask = `-- name: DeleteTask :exec
+DELETE FROM tasks WHERE task_id = ? AND manager_id = ?
+`
+
+type DeleteTaskParams struct {
+	TaskID    int64
+	ManagerID int64
+}
+
+func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTask, arg.TaskID, arg.ManagerID)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users WHERE user_id = ?
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, userID)
+	return err
+}
+
+const failAssignedTask = `-- name: FailAssignedTask :exec
+UPDATE assigned_tasks SET status = 'failed', completed_at = CURRENT_TIMESTAMP
+WHERE assigned_task_id = ?
+`
+
+func (q *Queries) FailAssignedTask(ctx context.Context, assignedTaskID int64) error {
+	_, err := q.db.ExecContext(ctx, failAssignedTask, assignedTaskID)
 	return err
 }
 
@@ -252,8 +489,68 @@ func (q *Queries) GetActiveConnectionUserDetails(ctx context.Context, arg GetAct
 	return i, err
 }
 
+const getAllDueRepeatingTasks = `-- name: GetAllDueRepeatingTasks :many
+
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE repeat_frequency IS NOT NULL
+  AND repeat_connection_id IS NOT NULL
+  AND (
+    (repeat_frequency = 'daily' AND (last_assigned_at IS NULL OR last_assigned_at < datetime('now', '-1 day')))
+    OR (repeat_frequency = 'weekly' AND (last_assigned_at IS NULL OR last_assigned_at < datetime('now', '-7 days')))
+    OR (repeat_frequency = 'monthly' AND (last_assigned_at IS NULL OR last_assigned_at < datetime('now', '-1 month')))
+  )
+`
+
+// =====================
+// BOOKMARKS & REPEATS
+// =====================
+func (q *Queries) GetAllDueRepeatingTasks(ctx context.Context) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getAllDueRepeatingTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at FROM users
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -272,7 +569,6 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.ActiveConnectionID,
 			&i.IsMember,
-			&i.Points,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -286,6 +582,412 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getAssignedTaskById = `-- name: GetAssignedTaskById :one
+SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks WHERE assigned_task_id = ?
+`
+
+func (q *Queries) GetAssignedTaskById(ctx context.Context, assignedTaskID int64) (AssignedTask, error) {
+	row := q.db.QueryRowContext(ctx, getAssignedTaskById, assignedTaskID)
+	var i AssignedTask
+	err := row.Scan(
+		&i.AssignedTaskID,
+		&i.TaskID,
+		&i.ConnectionID,
+		&i.WorkerID,
+		&i.Type,
+		&i.Status,
+		&i.Points,
+		&i.DurationMinutes,
+		&i.AssignedAt,
+		&i.DueTime,
+		&i.RequiresImage,
+		&i.NumImagesRequired,
+		&i.RequiresVideo,
+		&i.NumVideosRequired,
+		&i.RequiresAudio,
+		&i.NumAudioRequired,
+		&i.MinWordCount,
+		&i.PunishmentTaskID,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const getAssignedTasksByConnectionAndStatus = `-- name: GetAssignedTasksByConnectionAndStatus :many
+SELECT
+    at.assigned_task_id,
+    at.task_id,
+    at.connection_id,
+    at.worker_id,
+    at.type,
+    at.status,
+    at.points,
+    at.duration_minutes,
+    at.assigned_at,
+    at.due_time,
+    at.requires_image,
+    at.num_images_required,
+    at.requires_video,
+    at.num_videos_required,
+    at.requires_audio,
+    at.num_audio_required,
+    at.min_word_count,
+    at.punishment_task_id,
+    at.completed_at,
+    t.title,
+    t.description,
+    ts.image_paths,
+    ts.video_paths,
+    ts.audio_paths,
+    ts.submission_text
+FROM assigned_tasks at
+JOIN tasks t ON at.task_id = t.task_id
+LEFT JOIN task_submissions ts ON at.assigned_task_id = ts.assigned_task_id
+WHERE at.connection_id = ? AND at.status = ?
+ORDER BY at.due_time ASC
+`
+
+type GetAssignedTasksByConnectionAndStatusParams struct {
+	ConnectionID int64
+	Status       string
+}
+
+type GetAssignedTasksByConnectionAndStatusRow struct {
+	AssignedTaskID    int64
+	TaskID            int64
+	ConnectionID      int64
+	WorkerID          int64
+	Type              string
+	Status            string
+	Points            int64
+	DurationMinutes   int64
+	AssignedAt        sql.NullTime
+	DueTime           time.Time
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	PunishmentTaskID  sql.NullInt64
+	CompletedAt       sql.NullTime
+	Title             string
+	Description       sql.NullString
+	ImagePaths        sql.NullString
+	VideoPaths        sql.NullString
+	AudioPaths        sql.NullString
+	SubmissionText    sql.NullString
+}
+
+func (q *Queries) GetAssignedTasksByConnectionAndStatus(ctx context.Context, arg GetAssignedTasksByConnectionAndStatusParams) ([]GetAssignedTasksByConnectionAndStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAssignedTasksByConnectionAndStatus, arg.ConnectionID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAssignedTasksByConnectionAndStatusRow
+	for rows.Next() {
+		var i GetAssignedTasksByConnectionAndStatusRow
+		if err := rows.Scan(
+			&i.AssignedTaskID,
+			&i.TaskID,
+			&i.ConnectionID,
+			&i.WorkerID,
+			&i.Type,
+			&i.Status,
+			&i.Points,
+			&i.DurationMinutes,
+			&i.AssignedAt,
+			&i.DueTime,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PunishmentTaskID,
+			&i.CompletedAt,
+			&i.Title,
+			&i.Description,
+			&i.ImagePaths,
+			&i.VideoPaths,
+			&i.AudioPaths,
+			&i.SubmissionText,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAssignedTasksForWorkerByStatus = `-- name: GetAssignedTasksForWorkerByStatus :many
+SELECT
+    at.assigned_task_id,
+    at.task_id,
+    at.connection_id,
+    at.worker_id,
+    at.type,
+    at.status,
+    at.points,
+    at.duration_minutes,
+    at.assigned_at,
+    at.due_time,
+    at.requires_image,
+    at.num_images_required,
+    at.requires_video,
+    at.num_videos_required,
+    at.requires_audio,
+    at.num_audio_required,
+    at.min_word_count,
+    at.punishment_task_id,
+    at.completed_at,
+    t.title,
+    t.description
+FROM assigned_tasks at
+JOIN tasks t ON at.task_id = t.task_id
+WHERE at.worker_id = ? AND at.connection_id = ? AND at.status = ?
+ORDER BY at.due_time ASC
+`
+
+type GetAssignedTasksForWorkerByStatusParams struct {
+	WorkerID     int64
+	ConnectionID int64
+	Status       string
+}
+
+type GetAssignedTasksForWorkerByStatusRow struct {
+	AssignedTaskID    int64
+	TaskID            int64
+	ConnectionID      int64
+	WorkerID          int64
+	Type              string
+	Status            string
+	Points            int64
+	DurationMinutes   int64
+	AssignedAt        sql.NullTime
+	DueTime           time.Time
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	PunishmentTaskID  sql.NullInt64
+	CompletedAt       sql.NullTime
+	Title             string
+	Description       sql.NullString
+}
+
+func (q *Queries) GetAssignedTasksForWorkerByStatus(ctx context.Context, arg GetAssignedTasksForWorkerByStatusParams) ([]GetAssignedTasksForWorkerByStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAssignedTasksForWorkerByStatus, arg.WorkerID, arg.ConnectionID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAssignedTasksForWorkerByStatusRow
+	for rows.Next() {
+		var i GetAssignedTasksForWorkerByStatusRow
+		if err := rows.Scan(
+			&i.AssignedTaskID,
+			&i.TaskID,
+			&i.ConnectionID,
+			&i.WorkerID,
+			&i.Type,
+			&i.Status,
+			&i.Points,
+			&i.DurationMinutes,
+			&i.AssignedAt,
+			&i.DueTime,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PunishmentTaskID,
+			&i.CompletedAt,
+			&i.Title,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAvailableRewards = `-- name: GetAvailableRewards :many
+
+SELECT t.task_id, t.title, t.description, t.point_cost,
+       t.requires_image, t.num_images_required, t.requires_video, t.num_videos_required, t.requires_audio, t.num_audio_required,
+       t.min_word_count, t.default_duration_minutes, t.default_points
+FROM tasks t
+JOIN connections c ON t.manager_id = c.manager_id
+WHERE c.connection_id = ? AND t.type = 'reward'
+ORDER BY t.point_cost ASC
+`
+
+type GetAvailableRewardsRow struct {
+	TaskID                 int64
+	Title                  string
+	Description            sql.NullString
+	PointCost              sql.NullInt64
+	RequiresImage          int64
+	NumImagesRequired      int64
+	RequiresVideo          int64
+	NumVideosRequired      int64
+	RequiresAudio          int64
+	NumAudioRequired       int64
+	MinWordCount           sql.NullInt64
+	DefaultDurationMinutes int64
+	DefaultPoints          int64
+}
+
+// =====================
+// REWARDS (worker-facing)
+// =====================
+func (q *Queries) GetAvailableRewards(ctx context.Context, connectionID int64) ([]GetAvailableRewardsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAvailableRewards, connectionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAvailableRewardsRow
+	for rows.Next() {
+		var i GetAvailableRewardsRow
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.Title,
+			&i.Description,
+			&i.PointCost,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.DefaultDurationMinutes,
+			&i.DefaultPoints,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBookmarkedTasks = `-- name: GetBookmarkedTasks :many
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE manager_id = ? AND is_bookmarked = 1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetBookmarkedTasks(ctx context.Context, managerID int64) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getBookmarkedTasks, managerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getConnectionForBuckets = `-- name: GetConnectionForBuckets :one
+SELECT
+    c.connection_id,
+    c.manager_id,
+    c.worker_id,
+    c.worker_points,
+    m.username AS manager_username,
+    w.username AS worker_username
+FROM connections c
+JOIN users m ON c.manager_id = m.user_id
+JOIN users w ON c.worker_id = w.user_id
+WHERE c.connection_id = ?
+`
+
+type GetConnectionForBucketsRow struct {
+	ConnectionID    int64
+	ManagerID       int64
+	WorkerID        int64
+	WorkerPoints    int64
+	ManagerUsername string
+	WorkerUsername  string
+}
+
+func (q *Queries) GetConnectionForBuckets(ctx context.Context, connectionID int64) (GetConnectionForBucketsRow, error) {
+	row := q.db.QueryRowContext(ctx, getConnectionForBuckets, connectionID)
+	var i GetConnectionForBucketsRow
+	err := row.Scan(
+		&i.ConnectionID,
+		&i.ManagerID,
+		&i.WorkerID,
+		&i.WorkerPoints,
+		&i.ManagerUsername,
+		&i.WorkerUsername,
+	)
+	return i, err
 }
 
 const getConnectionRequestById = `-- name: GetConnectionRequestById :one
@@ -367,8 +1069,458 @@ func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]Ge
 	return items, nil
 }
 
+const getExpiredTodoTasks = `-- name: GetExpiredTodoTasks :many
+SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks
+WHERE status = 'todo' AND due_time <= CURRENT_TIMESTAMP
+`
+
+func (q *Queries) GetExpiredTodoTasks(ctx context.Context) ([]AssignedTask, error) {
+	rows, err := q.db.QueryContext(ctx, getExpiredTodoTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AssignedTask
+	for rows.Next() {
+		var i AssignedTask
+		if err := rows.Scan(
+			&i.AssignedTaskID,
+			&i.TaskID,
+			&i.ConnectionID,
+			&i.WorkerID,
+			&i.Type,
+			&i.Status,
+			&i.Points,
+			&i.DurationMinutes,
+			&i.AssignedAt,
+			&i.DueTime,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PunishmentTaskID,
+			&i.CompletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getManagerTasks = `-- name: GetManagerTasks :many
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE manager_id = ?
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetManagerTasks(ctx context.Context, managerID int64) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getManagerTasks, managerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getManagerTasksByType = `-- name: GetManagerTasksByType :many
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE manager_id = ? AND type = ?
+ORDER BY created_at DESC
+`
+
+type GetManagerTasksByTypeParams struct {
+	ManagerID int64
+	Type      string
+}
+
+func (q *Queries) GetManagerTasksByType(ctx context.Context, arg GetManagerTasksByTypeParams) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getManagerTasksByType, arg.ManagerID, arg.Type)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRepeatingTasks = `-- name: GetRepeatingTasks :many
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE manager_id = ? AND repeat_frequency IS NOT NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetRepeatingTasks(ctx context.Context, managerID int64) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getRepeatingTasks, managerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRewardTasks = `-- name: GetRewardTasks :many
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+WHERE manager_id = ? AND type = 'reward'
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetRewardTasks(ctx context.Context, managerID int64) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getRewardTasks, managerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.TaskID,
+			&i.ManagerID,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.DefaultPoints,
+			&i.DefaultDurationMinutes,
+			&i.RequiresImage,
+			&i.NumImagesRequired,
+			&i.RequiresVideo,
+			&i.NumVideosRequired,
+			&i.RequiresAudio,
+			&i.NumAudioRequired,
+			&i.MinWordCount,
+			&i.PointCost,
+			&i.IsBookmarked,
+			&i.RepeatFrequency,
+			&i.RepeatConnectionID,
+			&i.LastAssignedAt,
+			&i.PunishmentTaskID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSubmissionByAssignedTaskId = `-- name: GetSubmissionByAssignedTaskId :one
+SELECT submission_id, assigned_task_id, submission_text, image_paths, video_paths, audio_paths, submitted_at FROM task_submissions WHERE assigned_task_id = ?
+`
+
+func (q *Queries) GetSubmissionByAssignedTaskId(ctx context.Context, assignedTaskID int64) (TaskSubmission, error) {
+	row := q.db.QueryRowContext(ctx, getSubmissionByAssignedTaskId, assignedTaskID)
+	var i TaskSubmission
+	err := row.Scan(
+		&i.SubmissionID,
+		&i.AssignedTaskID,
+		&i.SubmissionText,
+		&i.ImagePaths,
+		&i.VideoPaths,
+		&i.AudioPaths,
+		&i.SubmittedAt,
+	)
+	return i, err
+}
+
+const getSubmissionForManager = `-- name: GetSubmissionForManager :one
+SELECT
+    ts.submission_id,
+    ts.assigned_task_id,
+    ts.submission_text,
+    ts.image_paths,
+    ts.video_paths,
+    ts.audio_paths,
+    ts.submitted_at,
+    at.status,
+    at.type,
+    at.points,
+    at.connection_id,
+    t.title,
+    t.description,
+    c.manager_id,
+    c.worker_id
+FROM task_submissions ts
+JOIN assigned_tasks at ON ts.assigned_task_id = at.assigned_task_id
+JOIN tasks t ON at.task_id = t.task_id
+JOIN connections c ON at.connection_id = c.connection_id
+WHERE ts.assigned_task_id = ?
+`
+
+type GetSubmissionForManagerRow struct {
+	SubmissionID   int64
+	AssignedTaskID int64
+	SubmissionText sql.NullString
+	ImagePaths     sql.NullString
+	VideoPaths     sql.NullString
+	AudioPaths     sql.NullString
+	SubmittedAt    sql.NullTime
+	Status         string
+	Type           string
+	Points         int64
+	ConnectionID   int64
+	Title          string
+	Description    sql.NullString
+	ManagerID      int64
+	WorkerID       int64
+}
+
+func (q *Queries) GetSubmissionForManager(ctx context.Context, assignedTaskID int64) (GetSubmissionForManagerRow, error) {
+	row := q.db.QueryRowContext(ctx, getSubmissionForManager, assignedTaskID)
+	var i GetSubmissionForManagerRow
+	err := row.Scan(
+		&i.SubmissionID,
+		&i.AssignedTaskID,
+		&i.SubmissionText,
+		&i.ImagePaths,
+		&i.VideoPaths,
+		&i.AudioPaths,
+		&i.SubmittedAt,
+		&i.Status,
+		&i.Type,
+		&i.Points,
+		&i.ConnectionID,
+		&i.Title,
+		&i.Description,
+		&i.ManagerID,
+		&i.WorkerID,
+	)
+	return i, err
+}
+
+const getSubmissionWithTask = `-- name: GetSubmissionWithTask :one
+SELECT
+    ts.submission_id,
+    ts.assigned_task_id,
+    ts.submission_text,
+    ts.image_paths,
+    ts.video_paths,
+    ts.audio_paths,
+    ts.submitted_at,
+    at.status,
+    at.type,
+    at.points,
+    at.requires_image,
+    at.num_images_required,
+    at.requires_video,
+    at.num_videos_required,
+    at.requires_audio,
+    at.num_audio_required,
+    at.min_word_count,
+    t.title,
+    t.description
+FROM task_submissions ts
+JOIN assigned_tasks at ON ts.assigned_task_id = at.assigned_task_id
+JOIN tasks t ON at.task_id = t.task_id
+WHERE ts.assigned_task_id = ?
+`
+
+type GetSubmissionWithTaskRow struct {
+	SubmissionID      int64
+	AssignedTaskID    int64
+	SubmissionText    sql.NullString
+	ImagePaths        sql.NullString
+	VideoPaths        sql.NullString
+	AudioPaths        sql.NullString
+	SubmittedAt       sql.NullTime
+	Status            string
+	Type              string
+	Points            int64
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	Title             string
+	Description       sql.NullString
+}
+
+func (q *Queries) GetSubmissionWithTask(ctx context.Context, assignedTaskID int64) (GetSubmissionWithTaskRow, error) {
+	row := q.db.QueryRowContext(ctx, getSubmissionWithTask, assignedTaskID)
+	var i GetSubmissionWithTaskRow
+	err := row.Scan(
+		&i.SubmissionID,
+		&i.AssignedTaskID,
+		&i.SubmissionText,
+		&i.ImagePaths,
+		&i.VideoPaths,
+		&i.AudioPaths,
+		&i.SubmittedAt,
+		&i.Status,
+		&i.Type,
+		&i.Points,
+		&i.RequiresImage,
+		&i.NumImagesRequired,
+		&i.RequiresVideo,
+		&i.NumVideosRequired,
+		&i.RequiresAudio,
+		&i.NumAudioRequired,
+		&i.MinWordCount,
+		&i.Title,
+		&i.Description,
+	)
+	return i, err
+}
+
+const getTaskById = `-- name: GetTaskById :one
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks WHERE task_id = ?
+`
+
+func (q *Queries) GetTaskById(ctx context.Context, taskID int64) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskById, taskID)
+	var i Task
+	err := row.Scan(
+		&i.TaskID,
+		&i.ManagerID,
+		&i.Title,
+		&i.Description,
+		&i.Type,
+		&i.DefaultPoints,
+		&i.DefaultDurationMinutes,
+		&i.RequiresImage,
+		&i.NumImagesRequired,
+		&i.RequiresVideo,
+		&i.NumVideosRequired,
+		&i.RequiresAudio,
+		&i.NumAudioRequired,
+		&i.MinWordCount,
+		&i.PointCost,
+		&i.IsBookmarked,
+		&i.RepeatFrequency,
+		&i.RepeatConnectionID,
+		&i.LastAssignedAt,
+		&i.PunishmentTaskID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at FROM users WHERE email = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at FROM users WHERE email = ?
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -381,14 +1533,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.ActiveConnectionID,
 		&i.IsMember,
-		&i.Points,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, points, created_at from users WHERE user_id = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at from users WHERE user_id = ?
 `
 
 func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
@@ -401,7 +1552,6 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 		&i.PasswordHash,
 		&i.ActiveConnectionID,
 		&i.IsMember,
-		&i.Points,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -465,6 +1615,31 @@ func (q *Queries) GetUsernameByUserId(ctx context.Context, userID int64) (string
 	return username, err
 }
 
+const getWorkerPoints = `-- name: GetWorkerPoints :one
+
+SELECT worker_points FROM connections WHERE connection_id = ?
+`
+
+// =====================
+// POINTS
+// =====================
+func (q *Queries) GetWorkerPoints(ctx context.Context, connectionID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getWorkerPoints, connectionID)
+	var worker_points int64
+	err := row.Scan(&worker_points)
+	return worker_points, err
+}
+
+const submitAssignedTask = `-- name: SubmitAssignedTask :exec
+UPDATE assigned_tasks SET status = 'in_review'
+WHERE assigned_task_id = ?
+`
+
+func (q *Queries) SubmitAssignedTask(ctx context.Context, assignedTaskID int64) error {
+	_, err := q.db.ExecContext(ctx, submitAssignedTask, assignedTaskID)
+	return err
+}
+
 const updateActiveConnection = `-- name: UpdateActiveConnection :exec
 UPDATE users SET active_connection_id = ? WHERE user_id = ?
 `
@@ -477,6 +1652,211 @@ type UpdateActiveConnectionParams struct {
 func (q *Queries) UpdateActiveConnection(ctx context.Context, arg UpdateActiveConnectionParams) error {
 	_, err := q.db.ExecContext(ctx, updateActiveConnection, arg.ActiveConnectionID, arg.UserID)
 	return err
+}
+
+const updateAssignedTask = `-- name: UpdateAssignedTask :exec
+UPDATE assigned_tasks SET
+    points = ?, duration_minutes = ?, due_time = ?, requires_image = ?, num_images_required = ?,
+    requires_video = ?, num_videos_required = ?, requires_audio = ?, num_audio_required = ?, min_word_count = ?
+WHERE assigned_task_id = ?
+`
+
+type UpdateAssignedTaskParams struct {
+	Points            int64
+	DurationMinutes   int64
+	DueTime           time.Time
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	AssignedTaskID    int64
+}
+
+func (q *Queries) UpdateAssignedTask(ctx context.Context, arg UpdateAssignedTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateAssignedTask,
+		arg.Points,
+		arg.DurationMinutes,
+		arg.DueTime,
+		arg.RequiresImage,
+		arg.NumImagesRequired,
+		arg.RequiresVideo,
+		arg.NumVideosRequired,
+		arg.RequiresAudio,
+		arg.NumAudioRequired,
+		arg.MinWordCount,
+		arg.AssignedTaskID,
+	)
+	return err
+}
+
+const updateAssignedTaskStatus = `-- name: UpdateAssignedTaskStatus :exec
+UPDATE assigned_tasks SET status = ? WHERE assigned_task_id = ?
+`
+
+type UpdateAssignedTaskStatusParams struct {
+	Status         string
+	AssignedTaskID int64
+}
+
+func (q *Queries) UpdateAssignedTaskStatus(ctx context.Context, arg UpdateAssignedTaskStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateAssignedTaskStatus, arg.Status, arg.AssignedTaskID)
+	return err
+}
+
+const updateAssignedTaskTemplate = `-- name: UpdateAssignedTaskTemplate :exec
+UPDATE tasks SET
+    title = ?, description = ?
+WHERE task_id = ?
+`
+
+type UpdateAssignedTaskTemplateParams struct {
+	Title       string
+	Description sql.NullString
+	TaskID      int64
+}
+
+func (q *Queries) UpdateAssignedTaskTemplate(ctx context.Context, arg UpdateAssignedTaskTemplateParams) error {
+	_, err := q.db.ExecContext(ctx, updateAssignedTaskTemplate, arg.Title, arg.Description, arg.TaskID)
+	return err
+}
+
+const updateSubmission = `-- name: UpdateSubmission :exec
+UPDATE task_submissions SET
+    submission_text = ?, image_paths = ?, video_paths = ?, audio_paths = ?
+WHERE assigned_task_id = ?
+`
+
+type UpdateSubmissionParams struct {
+	SubmissionText sql.NullString
+	ImagePaths     sql.NullString
+	VideoPaths     sql.NullString
+	AudioPaths     sql.NullString
+	AssignedTaskID int64
+}
+
+func (q *Queries) UpdateSubmission(ctx context.Context, arg UpdateSubmissionParams) error {
+	_, err := q.db.ExecContext(ctx, updateSubmission,
+		arg.SubmissionText,
+		arg.ImagePaths,
+		arg.VideoPaths,
+		arg.AudioPaths,
+		arg.AssignedTaskID,
+	)
+	return err
+}
+
+const updateTask = `-- name: UpdateTask :exec
+UPDATE tasks SET
+    title = ?, description = ?, type = ?, default_points = ?,
+    default_duration_minutes = ?, requires_image = ?, num_images_required = ?, requires_video = ?, num_videos_required = ?,
+    requires_audio = ?, num_audio_required = ?, min_word_count = ?, point_cost = ?,
+    is_bookmarked = ?, repeat_frequency = ?, punishment_task_id = ?
+WHERE task_id = ? AND manager_id = ?
+`
+
+type UpdateTaskParams struct {
+	Title                  string
+	Description            sql.NullString
+	Type                   string
+	DefaultPoints          int64
+	DefaultDurationMinutes int64
+	RequiresImage          int64
+	NumImagesRequired      int64
+	RequiresVideo          int64
+	NumVideosRequired      int64
+	RequiresAudio          int64
+	NumAudioRequired       int64
+	MinWordCount           sql.NullInt64
+	PointCost              sql.NullInt64
+	IsBookmarked           int64
+	RepeatFrequency        sql.NullString
+	PunishmentTaskID       sql.NullInt64
+	TaskID                 int64
+	ManagerID              int64
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateTask,
+		arg.Title,
+		arg.Description,
+		arg.Type,
+		arg.DefaultPoints,
+		arg.DefaultDurationMinutes,
+		arg.RequiresImage,
+		arg.NumImagesRequired,
+		arg.RequiresVideo,
+		arg.NumVideosRequired,
+		arg.RequiresAudio,
+		arg.NumAudioRequired,
+		arg.MinWordCount,
+		arg.PointCost,
+		arg.IsBookmarked,
+		arg.RepeatFrequency,
+		arg.PunishmentTaskID,
+		arg.TaskID,
+		arg.ManagerID,
+	)
+	return err
+}
+
+const updateTaskLastAssignedAt = `-- name: UpdateTaskLastAssignedAt :exec
+UPDATE tasks SET last_assigned_at = CURRENT_TIMESTAMP WHERE task_id = ?
+`
+
+func (q *Queries) UpdateTaskLastAssignedAt(ctx context.Context, taskID int64) error {
+	_, err := q.db.ExecContext(ctx, updateTaskLastAssignedAt, taskID)
+	return err
+}
+
+const updateTaskRepeatConnection = `-- name: UpdateTaskRepeatConnection :exec
+UPDATE tasks SET repeat_connection_id = ? WHERE task_id = ? AND manager_id = ?
+`
+
+type UpdateTaskRepeatConnectionParams struct {
+	RepeatConnectionID sql.NullInt64
+	TaskID             int64
+	ManagerID          int64
+}
+
+func (q *Queries) UpdateTaskRepeatConnection(ctx context.Context, arg UpdateTaskRepeatConnectionParams) error {
+	_, err := q.db.ExecContext(ctx, updateTaskRepeatConnection, arg.RepeatConnectionID, arg.TaskID, arg.ManagerID)
+	return err
+}
+
+const upsertSubmission = `-- name: UpsertSubmission :one
+INSERT INTO task_submissions (assigned_task_id, submission_text, image_paths, video_paths, audio_paths)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(assigned_task_id) DO UPDATE SET
+    submission_text = excluded.submission_text,
+    image_paths = excluded.image_paths,
+    video_paths = excluded.video_paths,
+    audio_paths = excluded.audio_paths,
+    submitted_at = CURRENT_TIMESTAMP
+RETURNING submission_id
+`
+
+type UpsertSubmissionParams struct {
+	AssignedTaskID int64
+	SubmissionText sql.NullString
+	ImagePaths     sql.NullString
+	VideoPaths     sql.NullString
+	AudioPaths     sql.NullString
+}
+
+func (q *Queries) UpsertSubmission(ctx context.Context, arg UpsertSubmissionParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, upsertSubmission,
+		arg.AssignedTaskID,
+		arg.SubmissionText,
+		arg.ImagePaths,
+		arg.VideoPaths,
+		arg.AudioPaths,
+	)
+	var submission_id int64
+	err := row.Scan(&submission_id)
+	return submission_id, err
 }
 
 const userIsMemberById = `-- name: UserIsMemberById :one

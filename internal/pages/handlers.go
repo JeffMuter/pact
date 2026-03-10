@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"pact/database"
 	"pact/internal/auth"
+	"pact/internal/buckets"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -42,17 +43,12 @@ func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Data: map[string]any{
-			"Title": "Buckets",
-		}}
-	
-	// Check if this is an HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		RenderTemplateFraction(w, "buckets", data)
+		buckets.ServeBucketsContent(w, r)
 		return
 	}
-	
+
+	data := buckets.BuildBucketsData(r)
 	RenderLayoutTemplate(w, r, "bucketsPage", data)
 }
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) {
@@ -217,17 +213,12 @@ func ServeStripePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeHomePage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Data: map[string]any{
-			"Title": "Home",
-		}}
-	
-	// Check if this is an HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		RenderTemplateFraction(w, "buckets", data)
+		buckets.ServeBucketsContent(w, r)
 		return
 	}
-	
+
+	data := buckets.BuildBucketsData(r)
 	RenderLayoutTemplate(w, r, "bucketsPage", data)
 }
 

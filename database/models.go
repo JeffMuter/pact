@@ -9,30 +9,33 @@ import (
 	"time"
 )
 
-type AssignedPunishment struct {
-	AssignedPunishmentID int64
-	PunishmentID         int64
-	WorkerID             int64
-	AssignedTaskID       int64
-	CompletedAt          sql.NullTime
-}
-
 type AssignedTask struct {
-	AssignedTaskID int64
-	TaskID         int64
-	WorkerID       int64
-	Points         int64
-	DueTime        time.Time
-	RequiresImage  bool
-	RequiresVideo  bool
-	WordCount      sql.NullInt64
-	CompletedAt    sql.NullTime
+	AssignedTaskID    int64
+	TaskID            int64
+	ConnectionID      int64
+	WorkerID          int64
+	Type              string
+	Status            string
+	Points            int64
+	DurationMinutes   int64
+	AssignedAt        sql.NullTime
+	DueTime           time.Time
+	RequiresImage     int64
+	NumImagesRequired int64
+	RequiresVideo     int64
+	NumVideosRequired int64
+	RequiresAudio     int64
+	NumAudioRequired  int64
+	MinWordCount      sql.NullInt64
+	PunishmentTaskID  sql.NullInt64
+	CompletedAt       sql.NullTime
 }
 
 type Connection struct {
 	ConnectionID int64
 	ManagerID    int64
 	WorkerID     int64
+	WorkerPoints int64
 }
 
 type ConnectionRequest struct {
@@ -44,21 +47,6 @@ type ConnectionRequest struct {
 	IsActive           int64
 }
 
-type Punishment struct {
-	PunishmentID int64
-	ManagerID    int64
-	Title        string
-	Description  sql.NullString
-}
-
-type Reward struct {
-	RewardID    int64
-	ManagerID   int64
-	Title       string
-	Description sql.NullString
-	PointCost   int64
-}
-
 type Session struct {
 	SessionID int64
 	UserID    int64
@@ -68,24 +56,37 @@ type Session struct {
 }
 
 type Task struct {
-	TaskID          int64
-	ManagerID       int64
-	Title           string
-	Description     sql.NullString
-	DefaultPoints   int64
-	DefaultDuration int64
-	RequiresImage   bool
-	RequiresVideo   bool
-	WordCount       sql.NullInt64
+	TaskID                 int64
+	ManagerID              int64
+	Title                  string
+	Description            sql.NullString
+	Type                   string
+	DefaultPoints          int64
+	DefaultDurationMinutes int64
+	RequiresImage          int64
+	NumImagesRequired      int64
+	RequiresVideo          int64
+	NumVideosRequired      int64
+	RequiresAudio          int64
+	NumAudioRequired       int64
+	MinWordCount           sql.NullInt64
+	PointCost              sql.NullInt64
+	IsBookmarked           int64
+	RepeatFrequency        sql.NullString
+	RepeatConnectionID     sql.NullInt64
+	LastAssignedAt         sql.NullTime
+	PunishmentTaskID       sql.NullInt64
+	CreatedAt              sql.NullTime
 }
 
-type TaskWorkermission struct {
-	WorkermissionID   int64
-	AssignedTaskID    int64
-	WorkermissionTime sql.NullTime
-	ImagePath         sql.NullString
-	VideoPath         sql.NullString
-	TextContent       sql.NullString
+type TaskSubmission struct {
+	SubmissionID   int64
+	AssignedTaskID int64
+	SubmissionText sql.NullString
+	ImagePaths     sql.NullString
+	VideoPaths     sql.NullString
+	AudioPaths     sql.NullString
+	SubmittedAt    sql.NullTime
 }
 
 type User struct {
@@ -95,6 +96,5 @@ type User struct {
 	PasswordHash       string
 	ActiveConnectionID sql.NullInt64
 	IsMember           int64
-	Points             int64
 	CreatedAt          sql.NullTime
 }

@@ -388,6 +388,13 @@ Database opened once in `main.go` via `database.OpenDatabase()`. All handlers re
 ### 10. **Error Handling Convention**
 Most handlers return errors to client via `http.Error()`. Check for patterns of silent failures (missing error checks) - ongoing refactoring is improving error handling.
 
+### 11. **Do NOT use `hx-confirm` inside `<dialog>` elements opened via `.showModal()`**
+DaisyUI modals use native `<dialog>` elements opened with `.showModal()`, which places the dialog in the browser's **top layer**. HTMX's `hx-confirm` attribute triggers `window.confirm()` — a native browser modal. When `window.confirm()` is called from within a top-layer dialog, browsers silently suppress it (returning `false` immediately with no popup). This causes HTMX to abort the request with zero feedback: no network request, no console error, no visible confirmation dialog — the button simply does nothing.
+
+**Workaround**: Use an inline confirmation step instead. Show/hide a "Are you sure?" message with confirm/cancel buttons inside the modal, where the confirm button fires the HTMX request directly (no `hx-confirm`). See the Disapprove button in `internal/templates/fractions/buckets.html` (review modal) for the pattern.
+
+`hx-confirm` works fine on elements that are NOT inside a `.showModal()` dialog (e.g., buttons on the main page, inside collapsed sections, etc.).
+
 ---
 
 ## Testing & Verification
@@ -418,10 +425,43 @@ Most handlers return errors to client via `http.Error()`. Check for patterns of 
 
 ## Next Steps / In-Progress Work
 
-Based on recent commits, the team is currently:
-1. **Refactoring connection request handling** - improving how pending requests are mapped to roles
-2. **Improving error handling throughout** - replacing silent failures with proper error messages
-3. **Data structure refactoring** - moving data into maps for cleaner frontend integration
+The buckets feature has been fully implemented:
 
-Check git history and modified files for latest context on ongoing work.
+### Buckets System Architecture
+- **`internal/buckets/services.go`** — Business logic: task CRUD, assignment, submission, review (approve/disapprove with auto-punishment), reward purchasing, bookmarks, repeat scheduling
+- **`internal/buckets/handlers.go`** — HTTP handlers for all 14 task endpoints
+- **`internal/templates/fractions/buckets.html`** — Role-aware UI with 4 buckets (Todo, In Review, Completed, Failed), Rewards section, Saved Tasks section, and Create Task/Reward modals
+- **Import cycle avoided** via `RenderFunc` injection pattern — `main.go` wires `pages.RenderTemplateFraction` into buckets at startup
+
+### Database Schema (Buckets)
+- **`tasks`** — Unified template table for normal/punishment/reward types. Owned by manager (cross-connection). Supports `is_bookmarked`, `repeat_frequency` (daily/weekly/monthly), `repeat_connection_id`, `last_assigned_at`, `punishment_task_id`
+- **`assigned_tasks`** — Concrete instances tied to a connection. Status lifecycle: `todo` → `in_review` → `completed`/`failed`. Has `connection_id`, `type`, timer fields (`duration_minutes`, `assigned_at`, `due_time`)
+- **`task_submissions`** — Worker responses with `submission_text` + media paths (image/video/audio)
+- **`connections.worker_points`** — Per-connection point balance (removed `points` from `users`)
+- **Migrations** in `database/migrations/` — `001_buckets_schema.sql` (full restructure), `002_repeat_tracking.sql` (repeat columns)
+
+### Repeat Task Scheduler
+- Background goroutine in `main.go` runs `ProcessDueRepeatingTasks()` every 15 minutes
+- Checks `last_assigned_at` against repeat frequency, auto-assigns due tasks to their `repeat_connection_id`
+
+### Key Routes (Buckets)
+```
+POST /task/create                    — Manager creates task (optionally assigns immediately)
+POST /task/assign/{task_id}          — Manager assigns saved template (with customization)
+DELETE /task/{task_id}               — Manager deletes template
+POST /task/save/{assigned_task_id}   — Worker saves draft submission
+POST /task/submit/{assigned_task_id} — Worker submits task for review
+POST /task/approve/{assigned_task_id}  — Manager approves (awards points)
+POST /task/disapprove/{assigned_task_id} — Manager disapproves (auto-assigns punishment)
+POST /reward/create                  — Manager creates reward template
+POST /reward/purchase/{task_id}      — Worker purchases reward (deducts points)
+GET  /bucketsContent                 — HTMX fragment refresh
+```
+
+### Future Work
+- File upload for image/video/audio submissions (paths stored in DB, S3 integration needed)
+- Timer countdown display on worker's todo items
+- Auto-submit on timer expiry
+- Manager template management page (edit existing saved tasks)
+- Pagination for completed/failed lists
 

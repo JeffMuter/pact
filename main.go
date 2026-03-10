@@ -5,8 +5,11 @@ import (
 	"log"
 	"net/http"
 	"pact/database"
+	"pact/internal/buckets"
 	"pact/internal/pages"
 	"pact/internal/router"
+	"pact/internal/storage"
+	"time"
 )
 
 func main() {
@@ -25,6 +28,20 @@ func main() {
 	}
 
 	fmt.Println("templates initialized...")
+
+	err = storage.Init()
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
+
+	buckets.SetRenderFunc(pages.RenderTemplateFraction)
+
+	go func() {
+		for {
+			buckets.ProcessDueRepeatingTasks()
+			time.Sleep(15 * time.Minute)
+		}
+	}()
 
 	// Setup router
 	r := router.Router()

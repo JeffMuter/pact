@@ -9,6 +9,13 @@
   <title>{{ .Data.Title }}</title>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
   <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    document.addEventListener('htmx:afterSettle', function(evt) {
+      document.querySelectorAll('dialog[open]').forEach(dialog => {
+        dialog.close();
+      });
+    });
+  </script>
 </head>
 
 
