@@ -18,7 +18,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingRequestRows, err := getUsersPendingConnectionRequests(userId)
+	pendingRequestRows, err := getUsersPendingConnectionRequests(r.Context(), userId)
 	if err != nil {
 		log.Printf("error getting pending requests for user %d: %v", userId, err)
 		http.Error(w, "could not load pending requests", http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	connectionRows, err := getConnectionsByUserId(userId)
+	connectionRows, err := getConnectionsByUserId(r.Context(), userId)
 	if err != nil {
 		log.Printf("error getting connections for user %d: %v", userId, err)
 		http.Error(w, "could not load connections", http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func ServeConnectionsContent(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	activeId, activeUsername, activeRole, err := getActiveConnectionDetails(userId)
+	activeId, activeUsername, activeRole, err := getActiveConnectionDetails(r.Context(), userId)
 	if err == nil && activeId > 0 {
 		data.Data["ActiveConnectionId"] = activeId
 		data.Data["ActiveUserUsername"] = activeUsername
@@ -114,7 +114,7 @@ func HandleCreateConnectionRequest(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("userID").(int)
 
-	err = CreateConnectionRequest(userId, senderRole, formEmail)
+	err = CreateConnectionRequest(r.Context(), userId, senderRole, formEmail)
 	if err != nil {
 		log.Printf("error creating connection request from user %d to %s: %v", userId, formEmail, err)
 		http.Error(w, "could not send connection request", http.StatusBadRequest)
@@ -133,7 +133,7 @@ func ServePendingRequestsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingRequestRows, err := getUsersPendingConnectionRequests(userId)
+	pendingRequestRows, err := getUsersPendingConnectionRequests(r.Context(), userId)
 	if err != nil {
 		log.Printf("error getting pending requests for user %d: %v", userId, err)
 		http.Error(w, "could not load pending requests", http.StatusInternalServerError)
@@ -190,7 +190,7 @@ func HandleAcceptConnectionRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = acceptConnectionRequest(requestId)
+	err = acceptConnectionRequest(r.Context(), requestId)
 	if err != nil {
 		log.Printf("error accepting request %d: %v", requestId, err)
 		http.Error(w, "could not accept connection request", http.StatusInternalServerError)
@@ -221,7 +221,7 @@ func HandleRejectConnectionRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = rejectConnectionRequest(requestId)
+	err = rejectConnectionRequest(r.Context(), requestId)
 	if err != nil {
 		log.Printf("error rejecting request %d: %v", requestId, err)
 		http.Error(w, "could not reject connection request", http.StatusInternalServerError)
@@ -245,7 +245,7 @@ func HandleUpdateActiveConnection(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("userID").(int)
 
-	err = updateActiveConnection(userId, connectionId)
+	err = updateActiveConnection(r.Context(), userId, connectionId)
 	if err != nil {
 		log.Printf("error updating active connection for user %d: %v", userId, err)
 		http.Error(w, "could not update active connection", http.StatusInternalServerError)
@@ -272,7 +272,7 @@ func HandleDeleteConnection(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("userID").(int)
 
-	err = deleteConnection(connectionId, userId)
+	err = deleteConnection(r.Context(), connectionId, userId)
 	if err != nil {
 		log.Printf("error deleting connection %d for user %d: %v", connectionId, userId, err)
 		http.Error(w, "could not delete connection", http.StatusInternalServerError)

@@ -1,2 +1,28 @@
 *.env
 uploads/
+
+# Test coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# Build artifacts
+tmp/
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Nix
+result
+result-*
+.dirlocals

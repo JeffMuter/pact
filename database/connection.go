@@ -18,6 +18,11 @@ func OpenDatabase() error {
 	}
 	fmt.Println("Database connection opened")
 
+	// Configure connection pool for SQLite (single writer optimal)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0)
+
 	err = db.Ping()
 	if err != nil {
 		return fmt.Errorf("error pinging db: %w", err)
@@ -43,4 +48,11 @@ func GetQueries() *Queries {
 		fmt.Println("if you see this, there's a problem in getqueries...")
 	}
 	return queries
+}
+
+// SetTestDB sets the global database and queries for testing purposes only.
+// This should only be called from test code.
+func SetTestDB(testDB *sql.DB) {
+	db = testDB
+	queries = New(testDB)
 }

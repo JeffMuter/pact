@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"pact/database"
 	"pact/internal/auth"
 	"path/filepath"
 	"strings"
@@ -41,6 +42,12 @@ var funcMap = template.FuncMap{
 			return result
 		}
 		return result
+	},
+	"default": func(defaultVal interface{}, value interface{}) interface{} {
+		if value == nil || value == "" || value == 0 {
+			return defaultVal
+		}
+		return value
 	},
 }
 
@@ -154,6 +161,56 @@ func RenderLayoutTemplate(w http.ResponseWriter, r *http.Request, templateName s
 		bd.GetData()["AuthStatus"] = authStatus
 	}
 
+	// Fetch and add username if user is authenticated
+	if authStatus != "guest" {
+		userId, ok := r.Context().Value("userID").(int)
+		if ok && userId > 0 {
+			ctx := r.Context()
+			queries := database.GetQueries()
+			username, err := queries.GetUsernameByUserId(ctx, int64(userId))
+			if err == nil && username != "" {
+				if td, ok := data.(TemplateData); ok {
+					td.Data["Username"] = username
+					data = td
+				} else if bd, ok := data.(interface{ GetData() map[string]any }); ok {
+					bd.GetData()["Username"] = username
+				}
+			}
+			
+			// Fetch role and points for active connection
+			activeConnId, err := queries.GetActiveConnectionId(ctx, int64(userId))
+			log.Printf("Active connection ID for user %d: %v (err: %v)", userId, activeConnId, err)
+			if err == nil && activeConnId.Valid {
+				// Get user's role in the active connection
+				role, err := queries.GetUserRoleInConnection(ctx, database.GetUserRoleInConnectionParams{
+					ManagerID:    int64(userId),
+					ConnectionID: activeConnId.Int64,
+				})
+				log.Printf("User role for user %d in connection %d: %s (err: %v)", userId, activeConnId.Int64, role, err)
+				if err == nil {
+					if td, ok := data.(TemplateData); ok {
+						td.Data["UserRole"] = role
+						data = td
+					} else if bd, ok := data.(interface{ GetData() map[string]any }); ok {
+						bd.GetData()["UserRole"] = role
+					}
+					
+					// Fetch worker points for display (both managers and workers need to see this)
+					workerPoints, err := queries.GetWorkerPoints(ctx, activeConnId.Int64)
+					log.Printf("Worker points for connection %d: %d (err: %v)", activeConnId.Int64, workerPoints, err)
+					if err == nil {
+						if td, ok := data.(TemplateData); ok {
+							td.Data["WorkerPoints"] = workerPoints
+							data = td
+						} else if bd, ok := data.(interface{ GetData() map[string]any }); ok {
+							bd.GetData()["WorkerPoints"] = workerPoints
+						}
+					}
+				}
+			}
+		}
+	}
+
 	log.Printf("authStatus set in template data: %v", authStatus)
 
 	// Retrieve the template
@@ -183,6 +240,7 @@ func RenderTemplateFraction(w http.ResponseWriter, templateName string, data int
 	w.Header().Set("Content-Type", "text/html")
 	err := tmpl.ExecuteTemplate(w, templateName, data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("error executing template fraction %s: %v", templateName, err)
+		http.Error(w, "error rendering page", http.StatusInternalServerError)
 	}
 }

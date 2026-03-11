@@ -12,6 +12,25 @@ import (
 	"time"
 )
 
+// Helper function to calculate duration in minutes from timer fields
+func calculateDurationMinutes(timerDays, timerHours, timerMinutes sql.NullInt64) int64 {
+	var total int64 = 0
+	if timerDays.Valid {
+		total += timerDays.Int64 * 1440 // days to minutes
+	}
+	if timerHours.Valid {
+		total += timerHours.Int64 * 60 // hours to minutes
+	}
+	if timerMinutes.Valid {
+		total += timerMinutes.Int64
+	}
+	// Default to 1440 minutes (1 day) if all fields are null/zero
+	if total == 0 {
+		total = 1440
+	}
+	return total
+}
+
 type RenderFunc func(http.ResponseWriter, string, interface{})
 
 var renderFraction RenderFunc
@@ -44,7 +63,7 @@ func BuildBucketsData(r *http.Request) BucketsData {
 		}
 	}
 
-	connectionId, err := getActiveConnectionId(userId)
+	connectionId, err := getActiveConnectionId(r.Context(), userId)
 	if err != nil {
 		return BucketsData{
 			Data: map[string]any{
@@ -54,7 +73,7 @@ func BuildBucketsData(r *http.Request) BucketsData {
 		}
 	}
 
-	conn, err := getConnectionForBuckets(connectionId)
+	conn, err := getConnectionForBuckets(r.Context(), connectionId)
 	if err != nil {
 		return BucketsData{
 			Data: map[string]any{
@@ -66,10 +85,10 @@ func BuildBucketsData(r *http.Request) BucketsData {
 
 	role := getUserRole(userId, conn)
 
-	todoTasks, _ := getTasksByStatus(connectionId, "todo")
-	reviewTasks, _ := getTasksByStatus(connectionId, "in_review")
-	completedTasks, _ := getTasksByStatus(connectionId, "completed")
-	failedTasks, _ := getTasksByStatus(connectionId, "failed")
+	todoTasks, _ := getTasksByStatus(r.Context(), connectionId, "todo")
+	reviewTasks, _ := getTasksByStatus(r.Context(), connectionId, "in_review")
+	completedTasks, _ := getTasksByStatus(r.Context(), connectionId, "completed")
+	failedTasks, _ := getTasksByStatus(r.Context(), connectionId, "failed")
 
 	data := BucketsData{
 		Data: map[string]any{
@@ -87,18 +106,18 @@ func BuildBucketsData(r *http.Request) BucketsData {
 	}
 
 	if role == "worker" {
-		rewards, err := getRewardsForConnection(connectionId)
+		rewards, err := getRewardsForConnection(r.Context(), connectionId)
 		if err == nil {
 			data.Data["Rewards"] = rewards
 		}
 	}
 
 	if role == "manager" {
-		rewards, err := getRewardsForConnection(connectionId)
+		rewards, err := getRewardsForConnection(r.Context(), connectionId)
 		if err == nil {
 			data.Data["Rewards"] = rewards
 		}
-		saved, err := getBookmarkedTasks(int64(userId))
+		saved, err := getBookmarkedTasks(r.Context(), int64(userId))
 		if err == nil {
 			data.Data["SavedTasks"] = saved
 		}
@@ -107,9 +126,8 @@ func BuildBucketsData(r *http.Request) BucketsData {
 	return data
 }
 
-func getConnectionForBuckets(connectionId int64) (database.GetConnectionForBucketsRow, error) {
+func getConnectionForBuckets(ctx context.Context, connectionId int64) (database.GetConnectionForBucketsRow, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	conn, err := queries.GetConnectionForBuckets(ctx, connectionId)
 	if err != nil {
@@ -118,9 +136,8 @@ func getConnectionForBuckets(connectionId int64) (database.GetConnectionForBucke
 	return conn, nil
 }
 
-func getActiveConnectionId(userId int) (int64, error) {
+func getActiveConnectionId(ctx context.Context, userId int) (int64, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	connId, err := queries.GetActiveConnectionId(ctx, int64(userId))
 	if err != nil {
@@ -139,9 +156,8 @@ func getUserRole(userId int, conn database.GetConnectionForBucketsRow) string {
 	return "worker"
 }
 
-func getTasksByStatus(connectionId int64, status string) ([]database.GetAssignedTasksByConnectionAndStatusRow, error) {
+func getTasksByStatus(ctx context.Context, connectionId int64, status string) ([]database.GetAssignedTasksByConnectionAndStatusRow, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	rows, err := queries.GetAssignedTasksByConnectionAndStatus(ctx, database.GetAssignedTasksByConnectionAndStatusParams{
 		ConnectionID: connectionId,
@@ -153,9 +169,8 @@ func getTasksByStatus(connectionId int64, status string) ([]database.GetAssigned
 	return rows, nil
 }
 
-func createTaskTemplate(managerId int64, params database.CreateTaskParams) (int64, error) {
+func createTaskTemplate(ctx context.Context, managerId int64, params database.CreateTaskParams) (int64, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	params.ManagerID = managerId
 	taskId, err := queries.CreateTask(ctx, params)
@@ -165,9 +180,8 @@ func createTaskTemplate(managerId int64, params database.CreateTaskParams) (int6
 	return taskId, nil
 }
 
-func assignTaskToWorker(managerId int64, taskId int64, connectionId int64, durationMinutes int64, points int64, dueTime time.Time) (int64, error) {
+func assignTaskToWorker(ctx context.Context, managerId int64, taskId int64, connectionId int64, durationMinutes int64, points int64, dueTime time.Time) (int64, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	task, err := queries.GetTaskById(ctx, taskId)
 	if err != nil {
@@ -208,9 +222,8 @@ func assignTaskToWorker(managerId int64, taskId int64, connectionId int64, durat
 	return assignedId, nil
 }
 
-func createAndAssignTask(managerId int64, connectionId int64, taskParams database.CreateTaskParams, durationMinutes int64, points int64) (int64, error) {
+func createAndAssignTask(ctx context.Context, managerId int64, connectionId int64, taskParams database.CreateTaskParams, durationMinutes int64, points int64, timerDays, timerHours, timerMinutes sql.NullInt64) (int64, error) {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -243,6 +256,9 @@ func createAndAssignTask(managerId int64, connectionId int64, taskParams databas
 		Type:              taskParams.Type,
 		Points:            points,
 		DurationMinutes:   durationMinutes,
+		TimerDays:         timerDays,
+		TimerHours:        timerHours,
+		TimerMinutes:      timerMinutes,
 		DueTime:           dueTime,
 		RequiresImage:     taskParams.RequiresImage,
 		NumImagesRequired: taskParams.NumImagesRequired,
@@ -279,9 +295,8 @@ func createAndAssignTask(managerId int64, connectionId int64, taskParams databas
 	return assignedId, nil
 }
 
-func saveSubmission(workerId int64, assignedTaskId int64, submissionText string) error {
+func saveSubmission(ctx context.Context, workerId int64, assignedTaskId int64, submissionText string) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	task, err := queries.GetAssignedTaskById(ctx, assignedTaskId)
 	if err != nil {
@@ -304,9 +319,8 @@ func saveSubmission(workerId int64, assignedTaskId int64, submissionText string)
 	return nil
 }
 
-func submitTask(workerId int64, assignedTaskId int64, submissionText string, imagePathsJSON string, videoPathsJSON string, audioPathsJSON string) error {
+func submitTask(ctx context.Context, workerId int64, assignedTaskId int64, submissionText string, imagePathsJSON string, videoPathsJSON string, audioPathsJSON string) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -383,9 +397,8 @@ func submitTask(workerId int64, assignedTaskId int64, submissionText string, ima
 	return nil
 }
 
-func approveTask(managerId int64, assignedTaskId int64) error {
+func approveTask(ctx context.Context, managerId int64, assignedTaskId int64) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -430,9 +443,8 @@ func approveTask(managerId int64, assignedTaskId int64) error {
 	return nil
 }
 
-func disapproveTask(managerId int64, assignedTaskId int64) error {
+func disapproveTask(ctx context.Context, managerId int64, assignedTaskId int64) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -496,9 +508,8 @@ func disapproveTask(managerId int64, assignedTaskId int64) error {
 	return nil
 }
 
-func purchaseReward(workerId int64, connectionId int64, taskId int64) (int64, error) {
+func purchaseReward(ctx context.Context, workerId int64, connectionId int64, taskId int64) (int64, error) {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -567,9 +578,8 @@ func purchaseReward(workerId int64, connectionId int64, taskId int64) (int64, er
 	return assignedId, nil
 }
 
-func deleteTaskTemplate(managerId int64, taskId int64) error {
+func deleteTaskTemplate(ctx context.Context, managerId int64, taskId int64) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	err := queries.DeleteTask(ctx, database.DeleteTaskParams{
 		TaskID:    taskId,
@@ -581,9 +591,8 @@ func deleteTaskTemplate(managerId int64, taskId int64) error {
 	return nil
 }
 
-func updateTaskTemplate(managerId int64, taskId int64, params database.UpdateTaskParams) error {
+func updateTaskTemplate(ctx context.Context, managerId int64, taskId int64, params database.UpdateTaskParams) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	params.TaskID = taskId
 	params.ManagerID = managerId
@@ -595,9 +604,8 @@ func updateTaskTemplate(managerId int64, taskId int64, params database.UpdateTas
 	return nil
 }
 
-func getRewardsForConnection(connectionId int64) ([]database.GetAvailableRewardsRow, error) {
+func getRewardsForConnection(ctx context.Context, connectionId int64) ([]database.GetAvailableRewardsRow, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	rows, err := queries.GetAvailableRewards(ctx, connectionId)
 	if err != nil {
@@ -606,9 +614,8 @@ func getRewardsForConnection(connectionId int64) ([]database.GetAvailableRewards
 	return rows, nil
 }
 
-func getWorkerPoints(connectionId int64) (int64, error) {
+func getWorkerPoints(ctx context.Context, connectionId int64) (int64, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	points, err := queries.GetWorkerPoints(ctx, connectionId)
 	if err != nil {
@@ -617,9 +624,8 @@ func getWorkerPoints(connectionId int64) (int64, error) {
 	return points, nil
 }
 
-func getBookmarkedTasks(managerId int64) ([]database.Task, error) {
+func getBookmarkedTasks(ctx context.Context, managerId int64) ([]database.Task, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	tasks, err := queries.GetBookmarkedTasks(ctx, managerId)
 	if err != nil {
@@ -628,9 +634,8 @@ func getBookmarkedTasks(managerId int64) ([]database.Task, error) {
 	return tasks, nil
 }
 
-func assignFromTemplate(managerId int64, taskId int64, connectionId int64, durationMinutes int64, points int64) (int64, error) {
+func assignFromTemplate(ctx context.Context, managerId int64, taskId int64, connectionId int64, durationMinutes int64, points int64, timerDays, timerHours, timerMinutes sql.NullInt64) (int64, error) {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -665,6 +670,9 @@ func assignFromTemplate(managerId int64, taskId int64, connectionId int64, durat
 		Type:              task.Type,
 		Points:            points,
 		DurationMinutes:   durationMinutes,
+		TimerDays:         timerDays,
+		TimerHours:        timerHours,
+		TimerMinutes:      timerMinutes,
 		DueTime:           dueTime,
 		RequiresImage:     task.RequiresImage,
 		NumImagesRequired: task.NumImagesRequired,
@@ -702,9 +710,8 @@ func assignFromTemplate(managerId int64, taskId int64, connectionId int64, durat
 	return assignedId, nil
 }
 
-func deleteAssignedTask(managerId int64, assignedTaskId int64) error {
+func deleteAssignedTask(ctx context.Context, managerId int64, assignedTaskId int64) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	task, err := queries.GetAssignedTaskById(ctx, assignedTaskId)
 	if err != nil {
@@ -726,9 +733,8 @@ func deleteAssignedTask(managerId int64, assignedTaskId int64) error {
 	return nil
 }
 
-func updateAssignedTask(managerId int64, assignedTaskId int64, title string, description sql.NullString, points int64, durationMinutes int64, requiresImage int64, numImagesRequired int64, requiresVideo int64, numVideosRequired int64, requiresAudio int64, numAudioRequired int64, minWordCount sql.NullInt64) error {
+func updateAssignedTask(ctx context.Context, managerId int64, assignedTaskId int64, title string, description sql.NullString, points int64, durationMinutes int64, timerDays, timerHours, timerMinutes sql.NullInt64, requiresImage int64, numImagesRequired int64, requiresVideo int64, numVideosRequired int64, requiresAudio int64, numAudioRequired int64, minWordCount sql.NullInt64) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -777,6 +783,9 @@ func updateAssignedTask(managerId int64, assignedTaskId int64, title string, des
 	err = qtx.UpdateAssignedTask(ctx, database.UpdateAssignedTaskParams{
 		Points:            points,
 		DurationMinutes:   durationMinutes,
+		TimerDays:         timerDays,
+		TimerHours:        timerHours,
+		TimerMinutes:      timerMinutes,
 		DueTime:           dueTime,
 		RequiresImage:     requiresImage,
 		NumImagesRequired: numImagesRequired,

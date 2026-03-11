@@ -30,7 +30,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 
 	var req SubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -141,7 +141,8 @@ func HandleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 
 	session, err := createStripeSubSession()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("error creating checkout session: %v", err)
+		http.Error(w, "unable to create checkout session", http.StatusInternalServerError)
 		fmt.Println("error http internal server error while handling chechout session...")
 		return
 	}

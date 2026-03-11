@@ -78,6 +78,9 @@ CREATE TABLE tasks (
     type TEXT NOT NULL DEFAULT 'normal' CHECK (type IN ('normal', 'punishment', 'reward')),
     default_points INTEGER NOT NULL DEFAULT 20,
     default_duration_minutes INTEGER NOT NULL DEFAULT 1440,
+    timer_days INTEGER DEFAULT NULL,
+    timer_hours INTEGER DEFAULT NULL,
+    timer_minutes INTEGER DEFAULT NULL,
     requires_image INTEGER NOT NULL DEFAULT 0,
     num_images_required INTEGER NOT NULL DEFAULT 1,
     requires_video INTEGER NOT NULL DEFAULT 0,
@@ -111,6 +114,9 @@ CREATE TABLE assigned_tasks (
     status TEXT NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'in_review', 'completed', 'failed')),
     points INTEGER NOT NULL,
     duration_minutes INTEGER NOT NULL DEFAULT 1440,
+    timer_days INTEGER DEFAULT NULL,
+    timer_hours INTEGER DEFAULT NULL,
+    timer_minutes INTEGER DEFAULT NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     due_time TIMESTAMP NOT NULL,
     requires_image INTEGER NOT NULL DEFAULT 0,
@@ -142,3 +148,10 @@ CREATE TABLE task_submissions (
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (assigned_task_id) REFERENCES assigned_tasks(assigned_task_id)
 );
+
+-- Performance indexes for common query patterns
+CREATE INDEX idx_assigned_tasks_connection_status ON assigned_tasks(connection_id, status);
+CREATE INDEX idx_assigned_tasks_worker_status ON assigned_tasks(worker_id, status);
+CREATE INDEX idx_connection_requests_receiver_active ON connection_requests(receiver_id, is_active);
+CREATE INDEX idx_tasks_manager_type ON tasks(manager_id, type);
+CREATE INDEX idx_tasks_repeat ON tasks(repeat_frequency, last_assigned_at) WHERE repeat_connection_id IS NOT NULL;

@@ -21,6 +21,9 @@ pkgs.mkShell {
       gcc
       gnumake
       
+      # Code quality (testing & linting)
+      golangci-lint
+      
       # PostgreSQL client (for database interaction if needed)
       postgresql
     ];
@@ -35,14 +38,19 @@ pkgs.mkShell {
 
 🚀 GETTING STARTED:
   • npm install           — Install dependencies
-  • ./buildAir.sh         — Run dev server with hot reload
-  • go run ./cmd/pact     — Build and run (if cmd exists)
+  • make dev              — Run dev server with hot reload
+  • make help             — Show all available commands
+
+🧪 TESTING:
+  • make test             — Run all tests
+  • make test-verbose     — Run tests with verbose output
+  • make test-coverage    — Generate coverage report (coverage.html)
 
 🔨 COMMON TASKS:
   • sqlc generate         — Generate database code from SQL
   • npm run build:css     — Build Tailwind CSS
   • npm run watch:css     — Watch CSS changes
-  • air                   — Hot reload Go server
+  • air                   — Hot reload Go server (used by: make dev)
 
 📊 DATABASE:
   • sqlite3 ./database/database.db — Access SQLite database
@@ -54,6 +62,8 @@ pkgs.mkShell {
   • ./database/     — SQL queries & migrations
   • ./static/       — Frontend assets (CSS, HTML)
   • ./web/          — Web dependencies
+
+💡 TIP: Run 'make help' for all available commands
 
 EOF
   '';

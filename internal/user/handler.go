@@ -21,9 +21,8 @@ func ShowRegistrationForm(w http.ResponseWriter, r *http.Request) {
 	pages.RenderLayoutTemplate(w, r, "registerForm", data)
 }
 
-func GetUserByEmail(email string) (*database.User, error) {
+func GetUserByEmail(ctx context.Context, email string) (*database.User, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	user, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {

@@ -46,6 +46,8 @@ func Router() *http.ServeMux {
 	// buckets/home pages
 	mux.HandleFunc("GET /buckets", auth.AuthMiddleware(pages.ServeBucketsPage))
 	mux.HandleFunc("GET /bucketsContent", auth.AuthMiddleware(buckets.ServeBucketsContent))
+	mux.HandleFunc("GET /rewards", auth.AuthMiddleware(pages.ServeRewardsPage))
+	mux.HandleFunc("GET /history", auth.AuthMiddleware(pages.ServeHistoryPage))
 	mux.HandleFunc("GET /home", auth.AuthMiddleware(pages.ServeHomePage))
 
 	// task management (manager)

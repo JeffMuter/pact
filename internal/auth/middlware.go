@@ -31,15 +31,10 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 				// If token is valid, get the database queries object
 				queries := database.GetQueries()
 
-				// Check if the user is a member
-				isMember, err := queries.UserIsMemberById(ctx, int64(userID))
-				if err == nil {
-					// Set authStatus based on membership
-					if isMember == 1 {
-						authStatus = "member"
-					} else {
-						authStatus = "registered"
-					}
+				authStatus = "registered"
+				activeConnId, err := queries.GetActiveConnectionId(ctx, int64(userID))
+				if err == nil && activeConnId.Valid {
+					authStatus = "member"
 				}
 			} else {
 				http.Redirect(w, r, "/loginPage", http.StatusSeeOther)
@@ -76,14 +71,11 @@ func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			fmt.Printf("[OptionalAuth] ValidateToken error: %v, userID: %d\n", err, userID)
 			if err == nil {
 				queries := database.GetQueries()
-				isMember, err := queries.UserIsMemberById(ctx, int64(userID))
-				fmt.Printf("[OptionalAuth] UserIsMemberById error: %v, isMember: %d\n", err, isMember)
-				if err == nil {
-					if isMember == 1 {
-						authStatus = "member"
-					} else {
-						authStatus = "registered"
-					}
+				authStatus = "registered"
+				activeConnId, err := queries.GetActiveConnectionId(ctx, int64(userID))
+				fmt.Printf("[OptionalAuth] GetActiveConnectionId error: %v, valid: %v\n", err, activeConnId.Valid)
+				if err == nil && activeConnId.Valid {
+					authStatus = "member"
 				}
 			}
 		}

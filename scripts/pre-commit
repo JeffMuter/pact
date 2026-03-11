@@ -1,0 +1,33 @@
+#!/bin/bash
+# Pre-commit hook for Pact
+# Install with: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "🧪 Running pre-commit checks..."
+
+# Run tests
+echo "  • Running tests..."
+if ! go test ./... > /dev/null 2>&1; then
+    echo "  ✗ Tests failed! Please fix before committing."
+    echo ""
+    echo "  To run tests locally, use:"
+    echo "    make test              # Quick run"
+    echo "    make test-verbose      # With output"
+    exit 1
+fi
+echo "    ✓ Tests passed"
+
+# Optional: Run linter if available
+if command -v golangci-lint &> /dev/null; then
+    echo "  • Running linter..."
+    if ! golangci-lint run ./internal/... ./database/... ./tests/... > /dev/null 2>&1; then
+        echo "  ✗ Linter found issues! Please fix before committing."
+        exit 1
+    fi
+    echo "    ✓ Linter passed"
+fi
+
+echo ""
+echo "✓ All pre-commit checks passed!"
+echo ""

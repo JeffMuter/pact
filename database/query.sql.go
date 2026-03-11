@@ -29,9 +29,10 @@ const assignTask = `-- name: AssignTask :one
 
 INSERT INTO assigned_tasks (
     task_id, connection_id, worker_id, type, points,
-    duration_minutes, due_time, requires_image, num_images_required, requires_video, num_videos_required,
+    duration_minutes, timer_days, timer_hours, timer_minutes, due_time,
+    requires_image, num_images_required, requires_video, num_videos_required,
     requires_audio, num_audio_required, min_word_count, punishment_task_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING assigned_task_id
 `
 
@@ -42,6 +43,9 @@ type AssignTaskParams struct {
 	Type              string
 	Points            int64
 	DurationMinutes   int64
+	TimerDays         sql.NullInt64
+	TimerHours        sql.NullInt64
+	TimerMinutes      sql.NullInt64
 	DueTime           time.Time
 	RequiresImage     int64
 	NumImagesRequired int64
@@ -64,6 +68,9 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (int64, 
 		arg.Type,
 		arg.Points,
 		arg.DurationMinutes,
+		arg.TimerDays,
+		arg.TimerHours,
+		arg.TimerMinutes,
 		arg.DueTime,
 		arg.RequiresImage,
 		arg.NumImagesRequired,
@@ -215,10 +222,11 @@ const createTask = `-- name: CreateTask :one
 
 INSERT INTO tasks (
     manager_id, title, description, type, default_points,
-    default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required,
+    default_duration_minutes, timer_days, timer_hours, timer_minutes,
+    requires_image, num_images_required, requires_video, num_videos_required,
     requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked,
     repeat_frequency, punishment_task_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING task_id
 `
 
@@ -229,6 +237,9 @@ type CreateTaskParams struct {
 	Type                   string
 	DefaultPoints          int64
 	DefaultDurationMinutes int64
+	TimerDays              sql.NullInt64
+	TimerHours             sql.NullInt64
+	TimerMinutes           sql.NullInt64
 	RequiresImage          int64
 	NumImagesRequired      int64
 	RequiresVideo          int64
@@ -253,6 +264,9 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, 
 		arg.Type,
 		arg.DefaultPoints,
 		arg.DefaultDurationMinutes,
+		arg.TimerDays,
+		arg.TimerHours,
+		arg.TimerMinutes,
 		arg.RequiresImage,
 		arg.NumImagesRequired,
 		arg.RequiresVideo,
@@ -491,7 +505,7 @@ func (q *Queries) GetActiveConnectionUserDetails(ctx context.Context, arg GetAct
 
 const getAllDueRepeatingTasks = `-- name: GetAllDueRepeatingTasks :many
 
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE repeat_frequency IS NOT NULL
   AND repeat_connection_id IS NOT NULL
   AND (
@@ -521,6 +535,9 @@ func (q *Queries) GetAllDueRepeatingTasks(ctx context.Context) ([]Task, error) {
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -585,7 +602,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getAssignedTaskById = `-- name: GetAssignedTaskById :one
-SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks WHERE assigned_task_id = ?
+SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, timer_days, timer_hours, timer_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks WHERE assigned_task_id = ?
 `
 
 func (q *Queries) GetAssignedTaskById(ctx context.Context, assignedTaskID int64) (AssignedTask, error) {
@@ -600,6 +617,9 @@ func (q *Queries) GetAssignedTaskById(ctx context.Context, assignedTaskID int64)
 		&i.Status,
 		&i.Points,
 		&i.DurationMinutes,
+		&i.TimerDays,
+		&i.TimerHours,
+		&i.TimerMinutes,
 		&i.AssignedAt,
 		&i.DueTime,
 		&i.RequiresImage,
@@ -625,6 +645,9 @@ SELECT
     at.status,
     at.points,
     at.duration_minutes,
+    at.timer_days,
+    at.timer_hours,
+    at.timer_minutes,
     at.assigned_at,
     at.due_time,
     at.requires_image,
@@ -663,6 +686,9 @@ type GetAssignedTasksByConnectionAndStatusRow struct {
 	Status            string
 	Points            int64
 	DurationMinutes   int64
+	TimerDays         sql.NullInt64
+	TimerHours        sql.NullInt64
+	TimerMinutes      sql.NullInt64
 	AssignedAt        sql.NullTime
 	DueTime           time.Time
 	RequiresImage     int64
@@ -700,6 +726,9 @@ func (q *Queries) GetAssignedTasksByConnectionAndStatus(ctx context.Context, arg
 			&i.Status,
 			&i.Points,
 			&i.DurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.AssignedAt,
 			&i.DueTime,
 			&i.RequiresImage,
@@ -741,6 +770,9 @@ SELECT
     at.status,
     at.points,
     at.duration_minutes,
+    at.timer_days,
+    at.timer_hours,
+    at.timer_minutes,
     at.assigned_at,
     at.due_time,
     at.requires_image,
@@ -775,6 +807,9 @@ type GetAssignedTasksForWorkerByStatusRow struct {
 	Status            string
 	Points            int64
 	DurationMinutes   int64
+	TimerDays         sql.NullInt64
+	TimerHours        sql.NullInt64
+	TimerMinutes      sql.NullInt64
 	AssignedAt        sql.NullTime
 	DueTime           time.Time
 	RequiresImage     int64
@@ -808,6 +843,9 @@ func (q *Queries) GetAssignedTasksForWorkerByStatus(ctx context.Context, arg Get
 			&i.Status,
 			&i.Points,
 			&i.DurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.AssignedAt,
 			&i.DueTime,
 			&i.RequiresImage,
@@ -839,7 +877,7 @@ const getAvailableRewards = `-- name: GetAvailableRewards :many
 
 SELECT t.task_id, t.title, t.description, t.point_cost,
        t.requires_image, t.num_images_required, t.requires_video, t.num_videos_required, t.requires_audio, t.num_audio_required,
-       t.min_word_count, t.default_duration_minutes, t.default_points
+       t.min_word_count, t.default_duration_minutes, t.timer_days, t.timer_hours, t.timer_minutes, t.default_points
 FROM tasks t
 JOIN connections c ON t.manager_id = c.manager_id
 WHERE c.connection_id = ? AND t.type = 'reward'
@@ -859,6 +897,9 @@ type GetAvailableRewardsRow struct {
 	NumAudioRequired       int64
 	MinWordCount           sql.NullInt64
 	DefaultDurationMinutes int64
+	TimerDays              sql.NullInt64
+	TimerHours             sql.NullInt64
+	TimerMinutes           sql.NullInt64
 	DefaultPoints          int64
 }
 
@@ -887,6 +928,9 @@ func (q *Queries) GetAvailableRewards(ctx context.Context, connectionID int64) (
 			&i.NumAudioRequired,
 			&i.MinWordCount,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.DefaultPoints,
 		); err != nil {
 			return nil, err
@@ -903,7 +947,7 @@ func (q *Queries) GetAvailableRewards(ctx context.Context, connectionID int64) (
 }
 
 const getBookmarkedTasks = `-- name: GetBookmarkedTasks :many
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE manager_id = ? AND is_bookmarked = 1
 ORDER BY created_at DESC
 `
@@ -925,6 +969,9 @@ func (q *Queries) GetBookmarkedTasks(ctx context.Context, managerID int64) ([]Ta
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -1070,7 +1117,7 @@ func (q *Queries) GetConnectionsById(ctx context.Context, managerID int64) ([]Ge
 }
 
 const getExpiredTodoTasks = `-- name: GetExpiredTodoTasks :many
-SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks
+SELECT assigned_task_id, task_id, connection_id, worker_id, type, status, points, duration_minutes, timer_days, timer_hours, timer_minutes, assigned_at, due_time, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, punishment_task_id, completed_at FROM assigned_tasks
 WHERE status = 'todo' AND due_time <= CURRENT_TIMESTAMP
 `
 
@@ -1092,6 +1139,9 @@ func (q *Queries) GetExpiredTodoTasks(ctx context.Context) ([]AssignedTask, erro
 			&i.Status,
 			&i.Points,
 			&i.DurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.AssignedAt,
 			&i.DueTime,
 			&i.RequiresImage,
@@ -1118,7 +1168,7 @@ func (q *Queries) GetExpiredTodoTasks(ctx context.Context) ([]AssignedTask, erro
 }
 
 const getManagerTasks = `-- name: GetManagerTasks :many
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE manager_id = ?
 ORDER BY created_at DESC
 `
@@ -1140,6 +1190,9 @@ func (q *Queries) GetManagerTasks(ctx context.Context, managerID int64) ([]Task,
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -1169,7 +1222,7 @@ func (q *Queries) GetManagerTasks(ctx context.Context, managerID int64) ([]Task,
 }
 
 const getManagerTasksByType = `-- name: GetManagerTasksByType :many
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE manager_id = ? AND type = ?
 ORDER BY created_at DESC
 `
@@ -1196,6 +1249,9 @@ func (q *Queries) GetManagerTasksByType(ctx context.Context, arg GetManagerTasks
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -1225,7 +1281,7 @@ func (q *Queries) GetManagerTasksByType(ctx context.Context, arg GetManagerTasks
 }
 
 const getRepeatingTasks = `-- name: GetRepeatingTasks :many
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE manager_id = ? AND repeat_frequency IS NOT NULL
 ORDER BY created_at DESC
 `
@@ -1247,6 +1303,9 @@ func (q *Queries) GetRepeatingTasks(ctx context.Context, managerID int64) ([]Tas
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -1276,7 +1335,7 @@ func (q *Queries) GetRepeatingTasks(ctx context.Context, managerID int64) ([]Tas
 }
 
 const getRewardTasks = `-- name: GetRewardTasks :many
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks
 WHERE manager_id = ? AND type = 'reward'
 ORDER BY created_at DESC
 `
@@ -1298,6 +1357,9 @@ func (q *Queries) GetRewardTasks(ctx context.Context, managerID int64) ([]Task, 
 			&i.Type,
 			&i.DefaultPoints,
 			&i.DefaultDurationMinutes,
+			&i.TimerDays,
+			&i.TimerHours,
+			&i.TimerMinutes,
 			&i.RequiresImage,
 			&i.NumImagesRequired,
 			&i.RequiresVideo,
@@ -1487,7 +1549,7 @@ func (q *Queries) GetSubmissionWithTask(ctx context.Context, assignedTaskID int6
 }
 
 const getTaskById = `-- name: GetTaskById :one
-SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks WHERE task_id = ?
+SELECT task_id, manager_id, title, description, type, default_points, default_duration_minutes, timer_days, timer_hours, timer_minutes, requires_image, num_images_required, requires_video, num_videos_required, requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked, repeat_frequency, repeat_connection_id, last_assigned_at, punishment_task_id, created_at FROM tasks WHERE task_id = ?
 `
 
 func (q *Queries) GetTaskById(ctx context.Context, taskID int64) (Task, error) {
@@ -1501,6 +1563,9 @@ func (q *Queries) GetTaskById(ctx context.Context, taskID int64) (Task, error) {
 		&i.Type,
 		&i.DefaultPoints,
 		&i.DefaultDurationMinutes,
+		&i.TimerDays,
+		&i.TimerHours,
+		&i.TimerMinutes,
 		&i.RequiresImage,
 		&i.NumImagesRequired,
 		&i.RequiresVideo,
@@ -1604,6 +1669,29 @@ func (q *Queries) GetUserPendingRequests(ctx context.Context, receiverID int64) 
 	return items, nil
 }
 
+const getUserRoleInConnection = `-- name: GetUserRoleInConnection :one
+
+SELECT 
+  CASE WHEN manager_id = ? THEN 'manager' ELSE 'worker' END AS role
+FROM connections
+WHERE connection_id = ?
+`
+
+type GetUserRoleInConnectionParams struct {
+	ManagerID    int64
+	ConnectionID int64
+}
+
+// =====================
+// POINTS
+// =====================
+func (q *Queries) GetUserRoleInConnection(ctx context.Context, arg GetUserRoleInConnectionParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserRoleInConnection, arg.ManagerID, arg.ConnectionID)
+	var role string
+	err := row.Scan(&role)
+	return role, err
+}
+
 const getUsernameByUserId = `-- name: GetUsernameByUserId :one
 SELECT username FROM users WHERE user_id = ?
 `
@@ -1616,13 +1704,9 @@ func (q *Queries) GetUsernameByUserId(ctx context.Context, userID int64) (string
 }
 
 const getWorkerPoints = `-- name: GetWorkerPoints :one
-
 SELECT worker_points FROM connections WHERE connection_id = ?
 `
 
-// =====================
-// POINTS
-// =====================
 func (q *Queries) GetWorkerPoints(ctx context.Context, connectionID int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getWorkerPoints, connectionID)
 	var worker_points int64
@@ -1656,7 +1740,8 @@ func (q *Queries) UpdateActiveConnection(ctx context.Context, arg UpdateActiveCo
 
 const updateAssignedTask = `-- name: UpdateAssignedTask :exec
 UPDATE assigned_tasks SET
-    points = ?, duration_minutes = ?, due_time = ?, requires_image = ?, num_images_required = ?,
+    points = ?, duration_minutes = ?, timer_days = ?, timer_hours = ?, timer_minutes = ?, due_time = ?,
+    requires_image = ?, num_images_required = ?,
     requires_video = ?, num_videos_required = ?, requires_audio = ?, num_audio_required = ?, min_word_count = ?
 WHERE assigned_task_id = ?
 `
@@ -1664,6 +1749,9 @@ WHERE assigned_task_id = ?
 type UpdateAssignedTaskParams struct {
 	Points            int64
 	DurationMinutes   int64
+	TimerDays         sql.NullInt64
+	TimerHours        sql.NullInt64
+	TimerMinutes      sql.NullInt64
 	DueTime           time.Time
 	RequiresImage     int64
 	NumImagesRequired int64
@@ -1679,6 +1767,9 @@ func (q *Queries) UpdateAssignedTask(ctx context.Context, arg UpdateAssignedTask
 	_, err := q.db.ExecContext(ctx, updateAssignedTask,
 		arg.Points,
 		arg.DurationMinutes,
+		arg.TimerDays,
+		arg.TimerHours,
+		arg.TimerMinutes,
 		arg.DueTime,
 		arg.RequiresImage,
 		arg.NumImagesRequired,
@@ -1751,7 +1842,8 @@ func (q *Queries) UpdateSubmission(ctx context.Context, arg UpdateSubmissionPara
 const updateTask = `-- name: UpdateTask :exec
 UPDATE tasks SET
     title = ?, description = ?, type = ?, default_points = ?,
-    default_duration_minutes = ?, requires_image = ?, num_images_required = ?, requires_video = ?, num_videos_required = ?,
+    default_duration_minutes = ?, timer_days = ?, timer_hours = ?, timer_minutes = ?,
+    requires_image = ?, num_images_required = ?, requires_video = ?, num_videos_required = ?,
     requires_audio = ?, num_audio_required = ?, min_word_count = ?, point_cost = ?,
     is_bookmarked = ?, repeat_frequency = ?, punishment_task_id = ?
 WHERE task_id = ? AND manager_id = ?
@@ -1763,6 +1855,9 @@ type UpdateTaskParams struct {
 	Type                   string
 	DefaultPoints          int64
 	DefaultDurationMinutes int64
+	TimerDays              sql.NullInt64
+	TimerHours             sql.NullInt64
+	TimerMinutes           sql.NullInt64
 	RequiresImage          int64
 	NumImagesRequired      int64
 	RequiresVideo          int64
@@ -1785,6 +1880,9 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
 		arg.Type,
 		arg.DefaultPoints,
 		arg.DefaultDurationMinutes,
+		arg.TimerDays,
+		arg.TimerHours,
+		arg.TimerMinutes,
 		arg.RequiresImage,
 		arg.NumImagesRequired,
 		arg.RequiresVideo,

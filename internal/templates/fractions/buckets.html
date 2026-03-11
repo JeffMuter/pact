@@ -42,12 +42,6 @@
 				{{ if eq .Data.Role "manager" }}Managing <span class="text-emerald-400">{{ .Data.WorkerUsername }}</span>{{ else }}Working for <span class="text-emerald-400">{{ .Data.ManagerUsername }}</span>{{ end }}
 			</p>
 		</div>
-		{{ if eq .Data.Role "worker" }}
-		<div class="text-right">
-			<p class="text-sm text-gray-400">Points</p>
-			<p class="text-3xl font-bold text-emerald-400">{{ .Data.WorkerPoints }}</p>
-		</div>
-		{{ end }}
 	</div>
 
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -65,9 +59,18 @@
 				{{ range .Data.TodoTasks }}
 				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer" onclick="document.getElementById('task-{{ .AssignedTaskID }}').showModal()">
 					<div class="flex justify-between items-start">
-						<div>
+						<div class="flex-1">
 							<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
 							{{ if .Description.Valid }}<p class="text-sm text-gray-400 mt-1">{{ .Description.String }}</p>{{ end }}
+							<!-- Timer badge on list item -->
+							{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}
+							<div class="flex items-center gap-1 text-xs text-gray-400 mt-2">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}
+							</div>
+							{{ end }}
 						</div>
 						<div class="flex items-center gap-2 shrink-0 ml-4">
 							<div class="text-right">
@@ -96,12 +99,31 @@
 					<div class="modal-box bg-gray-900 border border-emerald-400">
 						<h3 class="text-xl font-bold text-emerald-400 mb-2">{{ .Title }}</h3>
 						{{ if .Description.Valid }}<p class="text-gray-300 mb-4">{{ .Description.String }}</p>{{ end }}
-						<div class="flex flex-wrap gap-2 mb-4 text-sm text-gray-400">
-							<span>{{ .Points }} pts</span>
-							{{ if .RequiresImage }}<span class="badge badge-outline badge-sm badge-error">{{ .NumImagesRequired }} Image{{ if gt .NumImagesRequired 1 }}s{{ end }} Required</span>{{ end }}
-							{{ if .RequiresVideo }}<span class="badge badge-outline badge-sm badge-error">{{ .NumVideosRequired }} Video{{ if gt .NumVideosRequired 1 }}s{{ end }} Required</span>{{ end }}
-							{{ if .RequiresAudio }}<span class="badge badge-outline badge-sm badge-error">{{ .NumAudioRequired }} Audio{{ if gt .NumAudioRequired 1 }} Files{{ else }} File{{ end }} Required</span>{{ end }}
-							{{ if .MinWordCount.Valid }}<span class="badge badge-outline badge-sm badge-error">Min {{ .MinWordCount.Int64 }} words</span>{{ end }}
+						<div class="flex flex-wrap gap-2 mb-4 text-sm">
+							<span class="font-semibold text-emerald-400">{{ .Points }} pts</span>
+							
+							<!-- Timer Display -->
+							{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}
+							<span class="flex items-center gap-1 text-gray-300">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}
+							</span>
+							{{ else if .DurationMinutes }}
+							<span class="flex items-center gap-1 text-gray-300">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								{{ .DurationMinutes }} min
+							</span>
+							{{ end }}
+							
+							<!-- Media Requirements -->
+							{{ if .RequiresImage }}<span class="badge badge-outline badge-sm badge-info">{{ .NumImagesRequired }} Image{{ if gt .NumImagesRequired 1 }}s{{ end }}</span>{{ end }}
+							{{ if .RequiresVideo }}<span class="badge badge-outline badge-sm badge-info">{{ .NumVideosRequired }} Video{{ if gt .NumVideosRequired 1 }}s{{ end }}</span>{{ end }}
+							{{ if .RequiresAudio }}<span class="badge badge-outline badge-sm badge-info">{{ .NumAudioRequired }} Audio{{ if gt .NumAudioRequired 1 }} Files{{ else }} File{{ end }}</span>{{ end }}
+							{{ if .MinWordCount.Valid }}<span class="badge badge-outline badge-sm badge-warning">Min {{ .MinWordCount.Int64 }} words</span>{{ end }}
 						</div>
 						{{ if eq $.Data.Role "worker" }}
 						<form id="submit-form-{{ .AssignedTaskID }}" hx-post="/task/submit/{{ .AssignedTaskID }}" hx-target="#buckets-content" hx-swap="outerHTML" enctype="multipart/form-data">
@@ -387,99 +409,6 @@
 			{{ end }}
 		</section>
 
-		<!-- Completed -->
-		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
-			<h3 class="text-2xl font-bold text-emerald-400 mb-4">Completed</h3>
-			{{ if .Data.CompletedTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.CompletedTasks }}
-				<li class="p-4 border rounded border-gray-600 bg-black">
-					<div class="flex justify-between items-start">
-						<h4 class="text-lg text-gray-300">{{ .Title }}</h4>
-						<span class="text-emerald-400 font-bold shrink-0 ml-4">+{{ .Points }}</span>
-					</div>
-				</li>
-				{{ end }}
-			</ul>
-			{{ else }}
-			{{ template "emptyState" (dict "Message" "No completed tasks yet.") }}
-			{{ end }}
-		</section>
-
-		<!-- Failed -->
-		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
-			<h3 class="text-2xl font-bold text-emerald-400 mb-4">Failed</h3>
-			{{ if .Data.FailedTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.FailedTasks }}
-				<li class="p-4 border rounded border-red-600 bg-black">
-					<div class="flex justify-between items-start">
-						<h4 class="text-lg text-gray-300">{{ .Title }}</h4>
-						<span class="text-red-400 font-bold shrink-0 ml-4">{{ .Points }} pts</span>
-					</div>
-				</li>
-				{{ end }}
-			</ul>
-			{{ else }}
-			{{ template "emptyState" (dict "Message" "No failed tasks.") }}
-			{{ end }}
-		</section>
-	</div>
-
-	<!-- Rewards Section -->
-	<section class="mt-8 p-6 border border-emerald-400 rounded-lg bg-gray-900">
-		<div class="flex items-center justify-between mb-4">
-			<h3 class="text-2xl font-bold text-emerald-400">Rewards</h3>
-			{{ if eq .Data.Role "manager" }}
-			<button class="btn btn-circle btn-sm border-emerald-400 text-emerald-400 bg-transparent hover:bg-emerald-400 hover:text-black" onclick="createRewardModal.showModal()">+</button>
-			{{ end }}
-		</div>
-		{{ if .Data.Rewards }}
-		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-			{{ range .Data.Rewards }}
-			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col justify-between">
-				<div>
-					<div class="flex justify-between items-start">
-						<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
-						{{ if eq $.Data.Role "manager" }}
-						<div class="flex gap-2">
-							<button class="text-emerald-400 hover:text-emerald-300" onclick="openEditRewardModal({{ .TaskID }}, '{{ .Title }}', '{{ if .Description.Valid }}{{ .Description.String }}{{ end }}', {{ .PointCost.Int64 }}, {{ .DefaultDurationMinutes }}, {{ .RequiresImage }}, {{ .RequiresVideo }}, {{ .RequiresAudio }}, {{ if .MinWordCount.Valid }}{{ .MinWordCount.Int64 }}{{ else }}0{{ end }})">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-								</svg>
-							</button>
-							<button class="text-red-500 hover:text-red-400" hx-delete="/reward/{{ .TaskID }}" hx-target="#buckets-content" hx-swap="outerHTML" hx-confirm="Delete this reward?">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-								</svg>
-							</button>
-						</div>
-						{{ end }}
-					</div>
-					{{ if .Description.Valid }}<p class="text-sm text-gray-400 mt-1">{{ .Description.String }}</p>{{ end }}
-				</div>
-				<div class="flex justify-between items-center mt-3">
-					{{ if eq .PointCost.Int64 0 }}
-						<span class="text-emerald-400 font-bold">Free</span>
-					{{ else }}
-						<span class="text-emerald-400 font-bold">{{ .PointCost.Int64 }} pts</span>
-					{{ end }}
-					{{ if eq $.Data.Role "worker" }}
-						{{ $canAfford := ge $.Data.WorkerPoints .PointCost.Int64 }}
-						{{ template "secondaryButton" (dict "Text" "Purchase" "HtxPost" (printf "/reward/purchase/%d" .TaskID) "HtxTarget" "#buckets-content" "HtxSwap" "outerHTML" "HtxConfirm" (printf "Purchase this reward for %d points?" .PointCost.Int64) "Class" "btn-sm" "Disabled" (not $canAfford)) }}
-					{{ end }}
-				</div>
-			</li>
-			{{ end }}
-		</ul>
-		{{ else }}
-		{{ if eq .Data.Role "manager" }}
-			{{ template "emptyState" (dict "Message" "Create rewards for your worker using the + button.") }}
-		{{ else }}
-			{{ template "emptyState" (dict "Message" "No rewards available.") }}
-		{{ end }}
-		{{ end }}
-	</section>
 
 	<!-- Saved Tasks Section (manager only) -->
 	{{ if eq .Data.Role "manager" }}
@@ -511,9 +440,24 @@
 							<label class="text-emerald-400 text-sm font-semibold mb-1">Points</label>
 							<input type="number" name="points" value="{{ .DefaultPoints }}" class="p-2 bg-gray-800 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
 						</div>
-						<div class="flex flex-col flex-1 min-w-[120px]">
-							<label class="text-emerald-400 text-sm font-semibold mb-1">Duration (min)</label>
-							<input type="number" name="duration_minutes" value="{{ .DefaultDurationMinutes }}" class="p-2 bg-gray-800 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+						<div class="flex flex-col flex-1 min-w-[200px]">
+							<label class="text-emerald-400 text-sm font-semibold mb-1 flex items-center gap-1">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								Timer
+							</label>
+							<div class="grid grid-cols-3 gap-1">
+								<input type="number" name="timer_days" placeholder="d" min="0" 
+									   value="{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}{{ end }}"
+									   class="p-1 bg-gray-800 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+								<input type="number" name="timer_hours" placeholder="h" min="0" max="23"
+									   value="{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}{{ end }}"
+									   class="p-1 bg-gray-800 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+								<input type="number" name="timer_minutes" placeholder="m" min="0" max="59"
+									   value="{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}{{ end }}"
+									   class="p-1 bg-gray-800 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+							</div>
 						</div>
 						{{ template "secondaryButton" (dict "Text" "Assign" "Class" "btn-sm") }}
 					</form>
@@ -563,8 +507,32 @@
 					</div>
 				</div>
 
-				<div id="task-duration-field" class="hidden">
-					{{ template "formGroup" (dict "ID" "task-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Placeholder" "1440") }}
+				<div class="border border-emerald-400/30 rounded p-4 bg-black/20">
+					<label class="text-emerald-400 text-sm font-semibold mb-2 flex items-center gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						Timer
+					</label>
+					<p class="text-xs text-gray-400 mb-3">Set how long the worker has to complete this task</p>
+					<div class="grid grid-cols-3 gap-3">
+						<div>
+							<label class="text-xs text-gray-400">Days</label>
+							<input type="number" name="timer_days" min="0" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
+						<div>
+							<label class="text-xs text-gray-400">Hours</label>
+							<input type="number" name="timer_hours" min="0" max="23" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
+						<div>
+							<label class="text-xs text-gray-400">Minutes</label>
+							<input type="number" name="timer_minutes" min="0" max="59" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
+					</div>
+					<p class="text-xs text-gray-500 mt-2 italic">Leave all blank for default (1 day)</p>
 				</div>
 
 				{{ template "formGroup" (dict "ID" "task-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
@@ -588,65 +556,43 @@
 		<form method="dialog" class="modal-backdrop"><button>close</button></form>
 	</dialog>
 
-	<!-- Create Reward Modal (manager only) -->
-	<dialog id="createRewardModal" class="modal">
+	<!-- Edit Assigned Task Modal (manager only) -->
+	<dialog id="editTaskModal" class="modal">
 		<div class="modal-box bg-gray-900 border border-emerald-400 max-w-lg">
-			<h3 class="text-xl font-bold text-emerald-400 mb-4">Create Reward</h3>
-			<form hx-post="/reward/create" hx-target="#buckets-content" hx-swap="outerHTML" class="flex flex-col gap-4" id="create-reward-form">
-				{{ template "formGroup" (dict "ID" "reward-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Reward name") }}
-				{{ template "formGroup" (dict "ID" "reward-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What the worker gets...") }}
-				{{ template "formGroup" (dict "ID" "reward-cost" "Name" "point_cost" "Label" "Point Cost" "Type" "number" "Required" true "Placeholder" "How many points to purchase") }}
-
-				<div class="grid grid-cols-3 gap-4">
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="reward-requires-image" name="requires_image" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
-						<span class="text-gray-300 text-sm">Image</span>
+			<h3 class="text-xl font-bold text-emerald-400 mb-4">Edit Task</h3>
+			<form id="editTaskForm" hx-target="#buckets-content" hx-swap="outerHTML" class="flex flex-col gap-4" onsubmit="return true;">
+				<input type="hidden" id="edit-task-id" name="assigned_task_id" />
+				
+				{{ template "formGroup" (dict "ID" "edit-task-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Task title") }}
+				{{ template "formGroup" (dict "ID" "edit-task-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What needs to be done...") }}
+				{{ template "formGroup" (dict "ID" "edit-task-points" "Name" "points" "Label" "Points" "Type" "number" "Placeholder" "20") }}
+				
+				<div class="border border-emerald-400/30 rounded p-4 bg-black/20">
+					<label class="text-emerald-400 text-sm font-semibold mb-2 flex items-center gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						Timer
 					</label>
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="reward-requires-video" name="requires_video" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
-						<span class="text-gray-300 text-sm">Video</span>
-					</label>
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="reward-requires-audio" name="requires_audio" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
-						<span class="text-gray-300 text-sm">Audio</span>
-					</label>
-				</div>
-
-				<div id="reward-media-counts" class="hidden flex flex-col gap-3">
-					<div id="reward-image-count-field" class="hidden">
-						{{ template "formGroup" (dict "ID" "reward-num-images" "Name" "num_images_required" "Label" "Number of Images" "Type" "number" "Placeholder" "1" "Value" "1") }}
-					</div>
-					<div id="reward-video-count-field" class="hidden">
-						{{ template "formGroup" (dict "ID" "reward-num-videos" "Name" "num_videos_required" "Label" "Number of Videos" "Type" "number" "Placeholder" "1" "Value" "1") }}
-					</div>
-					<div id="reward-audio-count-field" class="hidden">
-						{{ template "formGroup" (dict "ID" "reward-num-audio" "Name" "num_audio_required" "Label" "Number of Audio Files" "Type" "number" "Placeholder" "1" "Value" "1") }}
+					<div class="grid grid-cols-3 gap-3">
+						<div>
+							<label class="text-xs text-gray-400">Days</label>
+							<input type="number" id="edit-timer-days" name="timer_days" min="0" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
+						<div>
+							<label class="text-xs text-gray-400">Hours</label>
+							<input type="number" id="edit-timer-hours" name="timer_hours" min="0" max="23" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
+						<div>
+							<label class="text-xs text-gray-400">Minutes</label>
+							<input type="number" id="edit-timer-minutes" name="timer_minutes" min="0" max="59" placeholder="0" 
+								   class="input input-sm w-full bg-gray-800 text-white border-gray-600 focus:border-emerald-400" />
+						</div>
 					</div>
 				</div>
-
-				<div id="reward-duration-field" class="hidden">
-					{{ template "formGroup" (dict "ID" "reward-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Placeholder" "1440") }}
-				</div>
-
-				{{ template "formGroup" (dict "ID" "reward-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
-
-				{{ template "secondaryButton" (dict "Text" "Create Reward" "Class" "w-full mt-2 font-semibold") }}
-			</form>
-		</div>
-		<form method="dialog" class="modal-backdrop"><button>close</button></form>
-	</dialog>
-
-	<!-- Edit Reward Modal -->
-	<dialog id="editRewardModal" class="modal">
-		<div class="modal-box bg-gray-900 border border-emerald-400 max-w-lg">
-			<h3 class="text-xl font-bold text-emerald-400 mb-4">Edit Reward</h3>
-			<form id="editRewardForm" hx-target="#buckets-content" hx-swap="outerHTML" class="flex flex-col gap-4" onsubmit="return true;">
-				<input type="hidden" id="edit-reward-id" name="task_id" />
-				{{ template "formGroup" (dict "ID" "edit-reward-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Reward name") }}
-				{{ template "formGroup" (dict "ID" "edit-reward-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What the worker gets...") }}
-				{{ template "formGroup" (dict "ID" "edit-reward-cost" "Name" "point_cost" "Label" "Point Cost" "Type" "number" "Required" true "Placeholder" "How many points to purchase") }}
-				{{ template "formGroup" (dict "ID" "edit-reward-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Placeholder" "1440") }}
-
+				
 				<div class="grid grid-cols-3 gap-4">
 					<label class="label cursor-pointer justify-start gap-2">
 						<input type="checkbox" id="edit-requires-image" name="requires_image" class="checkbox checkbox-sm checkbox-success" />
@@ -661,45 +607,9 @@
 						<span class="text-gray-300 text-sm">Audio</span>
 					</label>
 				</div>
-
-				{{ template "formGroup" (dict "ID" "edit-reward-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
-
-				<button type="submit" class="btn rounded text-emerald-600 border border-emerald-400 hover:bg-emerald-400 hover:text-black bg-transparent p-2 duration-300 w-full mt-2 font-semibold">
-					Update Reward
-				</button>
-			</form>
-		</div>
-		<form method="dialog" class="modal-backdrop"><button>close</button></form>
-	</dialog>
-
-	<!-- Edit Assigned Task Modal -->
-	<dialog id="editTaskModal" class="modal">
-		<div class="modal-box bg-gray-900 border border-emerald-400 max-w-lg">
-			<h3 class="text-xl font-bold text-emerald-400 mb-4">Edit Task</h3>
-			<form id="editTaskForm" hx-target="#buckets-content" hx-swap="outerHTML" class="flex flex-col gap-4" onsubmit="return true;">
-				<input type="hidden" id="edit-task-id" name="assigned_task_id" />
-				{{ template "formGroup" (dict "ID" "edit-task-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Task title") }}
-				{{ template "formGroup" (dict "ID" "edit-task-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What needs to be done...") }}
-				{{ template "formGroup" (dict "ID" "edit-task-points" "Name" "points" "Label" "Points" "Type" "number" "Required" true "Placeholder" "20") }}
-				{{ template "formGroup" (dict "ID" "edit-task-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Required" true "Placeholder" "1440") }}
-
-				<div class="grid grid-cols-3 gap-4">
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="edit-task-requires-image" name="requires_image" class="checkbox checkbox-sm checkbox-success" />
-						<span class="text-gray-300 text-sm">Image</span>
-					</label>
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="edit-task-requires-video" name="requires_video" class="checkbox checkbox-sm checkbox-success" />
-						<span class="text-gray-300 text-sm">Video</span>
-					</label>
-					<label class="label cursor-pointer justify-start gap-2">
-						<input type="checkbox" id="edit-task-requires-audio" name="requires_audio" class="checkbox checkbox-sm checkbox-success" />
-						<span class="text-gray-300 text-sm">Audio</span>
-					</label>
-				</div>
-
+				
 				{{ template "formGroup" (dict "ID" "edit-task-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
-
+				
 				<button type="submit" class="btn rounded text-emerald-600 border border-emerald-400 hover:bg-emerald-400 hover:text-black bg-transparent p-2 duration-300 w-full mt-2 font-semibold">
 					Update Task
 				</button>
@@ -710,162 +620,39 @@
 
 	<script>
 		function openEditTaskModal(assignedTaskId, title, description, points, durationMinutes, reqImage, reqVideo, reqAudio, wordCount) {
+			// Calculate days, hours, minutes from duration
+			const days = Math.floor(durationMinutes / 1440);
+			const hours = Math.floor((durationMinutes % 1440) / 60);
+			const minutes = durationMinutes % 60;
+			
 			document.getElementById('edit-task-id').value = assignedTaskId;
 			document.getElementById('edit-task-title').value = title;
 			document.getElementById('edit-task-desc').value = description;
 			document.getElementById('edit-task-points').value = points;
-			document.getElementById('edit-task-duration').value = durationMinutes;
-			document.getElementById('edit-task-requires-image').checked = reqImage === 1;
-			document.getElementById('edit-task-requires-video').checked = reqVideo === 1;
-			document.getElementById('edit-task-requires-audio').checked = reqAudio === 1;
+			document.getElementById('edit-timer-days').value = days > 0 ? days : '';
+			document.getElementById('edit-timer-hours').value = hours > 0 ? hours : '';
+			document.getElementById('edit-timer-minutes').value = minutes > 0 ? minutes : '';
+			document.getElementById('edit-requires-image').checked = reqImage === 1;
+			document.getElementById('edit-requires-video').checked = reqVideo === 1;
+			document.getElementById('edit-requires-audio').checked = reqAudio === 1;
 			document.getElementById('edit-task-wordcount').value = wordCount > 0 ? wordCount : '';
 			
-			// Update form action
 			document.getElementById('editTaskForm').setAttribute('hx-put', '/assigned-task/' + assignedTaskId);
 			htmx.process(document.getElementById('editTaskForm'));
 			
 			editTaskModal.showModal();
 		}
-
-		// Close modal on successful submission
+		
 		document.getElementById('editTaskForm').addEventListener('htmx:afterSwap', function() {
 			editTaskModal.close();
 		});
 
-		function openEditRewardModal(taskId, title, description, pointCost, duration, reqImage, reqVideo, reqAudio, wordCount) {
-			document.getElementById('edit-reward-id').value = taskId;
-			document.getElementById('edit-reward-title').value = title;
-			document.getElementById('edit-reward-desc').value = description;
-			document.getElementById('edit-reward-cost').value = pointCost;
-			document.getElementById('edit-reward-duration').value = duration;
-			document.getElementById('edit-requires-image').checked = reqImage === 1;
-			document.getElementById('edit-requires-video').checked = reqVideo === 1;
-			document.getElementById('edit-requires-audio').checked = reqAudio === 1;
-			document.getElementById('edit-reward-wordcount').value = wordCount > 0 ? wordCount : '';
-			
-			// Update form action
-			document.getElementById('editRewardForm').setAttribute('hx-put', '/reward/' + taskId);
-			htmx.process(document.getElementById('editRewardForm'));
-			
-			editRewardModal.showModal();
-		}
-
-		// Close modal on successful submission
-		document.getElementById('editRewardForm').addEventListener('htmx:afterSwap', function() {
-			editRewardModal.close();
-		});
-
-		// Toggle media count and duration fields based on checkbox state
 		function toggleMediaFields(context) {
-			const imageCheck = document.getElementById(context === 'create' ? 'task-requires-image' : 'edit-task-requires-image');
-			const videoCheck = document.getElementById(context === 'create' ? 'task-requires-video' : 'edit-task-requires-video');
-			const audioCheck = document.getElementById(context === 'create' ? 'task-requires-audio' : 'edit-task-requires-audio');
-
-			const imageCountField = document.getElementById(context === 'create' ? 'task-image-count-field' : 'edit-task-image-count-field');
-			const videoCountField = document.getElementById(context === 'create' ? 'task-video-count-field' : 'edit-task-video-count-field');
-			const audioCountField = document.getElementById(context === 'create' ? 'task-audio-count-field' : 'edit-task-audio-count-field');
-			const durationField = document.getElementById(context === 'create' ? 'task-duration-field' : 'edit-task-duration-field');
-			const mediaCounts = document.getElementById(context === 'create' ? 'task-media-counts' : 'edit-task-media-counts');
-
-			// Show/hide count fields
-			if (imageCheck && imageCountField) {
-				if (imageCheck.checked) {
-					imageCountField.classList.remove('hidden');
-				} else {
-					imageCountField.classList.add('hidden');
-				}
-			}
-
-			if (videoCheck && videoCountField) {
-				if (videoCheck.checked) {
-					videoCountField.classList.remove('hidden');
-				} else {
-					videoCountField.classList.add('hidden');
-				}
-			}
-
-			if (audioCheck && audioCountField) {
-				if (audioCheck.checked) {
-					audioCountField.classList.remove('hidden');
-				} else {
-					audioCountField.classList.add('hidden');
-				}
-			}
-
-			// Show media counts container if any media is selected
-			if (mediaCounts) {
-				if ((imageCheck && imageCheck.checked) || (videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
-					mediaCounts.classList.remove('hidden');
-				} else {
-					mediaCounts.classList.add('hidden');
-				}
-			}
-
-			// Show duration field only if video or audio is selected
-			if (durationField) {
-				if ((videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
-					durationField.classList.remove('hidden');
-				} else {
-					durationField.classList.add('hidden');
-				}
-			}
-		}
-
-		function toggleRewardMediaFields(context) {
-			const imageCheck = document.getElementById(context === 'create' ? 'reward-requires-image' : 'edit-reward-requires-image');
-			const videoCheck = document.getElementById(context === 'create' ? 'reward-requires-video' : 'edit-reward-requires-video');
-			const audioCheck = document.getElementById(context === 'create' ? 'reward-requires-audio' : 'edit-reward-requires-audio');
-
-			const imageCountField = document.getElementById(context === 'create' ? 'reward-image-count-field' : 'edit-reward-image-count-field');
-			const videoCountField = document.getElementById(context === 'create' ? 'reward-video-count-field' : 'edit-reward-video-count-field');
-			const audioCountField = document.getElementById(context === 'create' ? 'reward-audio-count-field' : 'edit-reward-audio-count-field');
-			const durationField = document.getElementById(context === 'create' ? 'reward-duration-field' : 'edit-reward-duration-field');
-			const mediaCounts = document.getElementById(context === 'create' ? 'reward-media-counts' : 'edit-reward-media-counts');
-
-			// Show/hide count fields
-			if (imageCheck && imageCountField) {
-				if (imageCheck.checked) {
-					imageCountField.classList.remove('hidden');
-				} else {
-					imageCountField.classList.add('hidden');
-				}
-			}
-
-			if (videoCheck && videoCountField) {
-				if (videoCheck.checked) {
-					videoCountField.classList.remove('hidden');
-				} else {
-					videoCountField.classList.add('hidden');
-				}
-			}
-
-			if (audioCheck && audioCountField) {
-				if (audioCheck.checked) {
-					audioCountField.classList.remove('hidden');
-				} else {
-					audioCountField.classList.add('hidden');
-				}
-			}
-
-			// Show media counts container if any media is selected
-			if (mediaCounts) {
-				if ((imageCheck && imageCheck.checked) || (videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
-					mediaCounts.classList.remove('hidden');
-				} else {
-					mediaCounts.classList.add('hidden');
-				}
-			}
-
-			// Show duration field only if video or audio is selected
-			if (durationField) {
-				if ((videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
-					durationField.classList.remove('hidden');
-				} else {
-					durationField.classList.add('hidden');
-				}
-			}
+			const prefix = context === 'create' ? 'task' : 'edit-task';
+			// Implementation would go here if needed for showing/hiding media count fields
 		}
 	</script>
+
 	{{ end }}
 
 	{{ end }}

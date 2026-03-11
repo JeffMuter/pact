@@ -1,0 +1,234 @@
+{{ define "rewards" }}
+<div id="rewards-content" class="flex flex-col w-3/4 mx-auto">
+	{{ if .Data.NoConnection }}
+	{{ template "pageTitle" (dict "Title" "Rewards") }}
+	{{ template "emptyState" (dict "Message" "Set an active connection to view rewards.") }}
+	{{ else }}
+
+	<div class="flex items-center justify-between mb-8">
+		<div>
+			<h1 class="text-5xl font-bold text-white mb-1">Rewards</h1>
+			<p class="text-gray-400">
+				{{ if eq .Data.Role "manager" }}Managing <span class="text-emerald-400">{{ .Data.WorkerUsername }}</span>{{ else }}Working for <span class="text-emerald-400">{{ .Data.ManagerUsername }}</span>{{ end }}
+			</p>
+		</div>
+	</div>
+
+	<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-2xl font-bold text-emerald-400">Available Rewards</h3>
+			{{ if eq .Data.Role "manager" }}
+			<button class="btn btn-circle btn-sm border-emerald-400 text-emerald-400 bg-transparent hover:bg-emerald-400 hover:text-black" onclick="createRewardModal.showModal()">+</button>
+			{{ end }}
+		</div>
+		{{ if .Data.Rewards }}
+		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+			{{ range .Data.Rewards }}
+			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col justify-between">
+				<div>
+					<div class="flex justify-between items-start">
+						<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
+						{{ if eq $.Data.Role "manager" }}
+						<div class="flex gap-2">
+							<button class="text-emerald-400 hover:text-emerald-300" onclick="openEditRewardModal({{ .TaskID }}, '{{ .Title }}', '{{ if .Description.Valid }}{{ .Description.String }}{{ end }}', {{ .PointCost.Int64 }}, {{ .DefaultDurationMinutes }}, {{ .RequiresImage }}, {{ .RequiresVideo }}, {{ .RequiresAudio }}, {{ if .MinWordCount.Valid }}{{ .MinWordCount.Int64 }}{{ else }}0{{ end }})">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+								</svg>
+							</button>
+							<button class="text-red-500 hover:text-red-400" hx-delete="/reward/{{ .TaskID }}" hx-target="#rewards-content" hx-swap="outerHTML" hx-confirm="Delete this reward?">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+								</svg>
+							</button>
+						</div>
+						{{ end }}
+					</div>
+					{{ if .Description.Valid }}<p class="text-sm text-gray-400 mt-1">{{ .Description.String }}</p>{{ end }}
+				</div>
+				<div class="flex justify-between items-center mt-3">
+					{{ if eq .PointCost.Int64 0 }}
+						<span class="text-emerald-400 font-bold">Free</span>
+					{{ else }}
+						<span class="text-emerald-400 font-bold">{{ .PointCost.Int64 }} pts</span>
+					{{ end }}
+					{{ if eq $.Data.Role "worker" }}
+						{{ $canAfford := ge $.Data.WorkerPoints .PointCost.Int64 }}
+						{{ template "secondaryButton" (dict "Text" "Purchase" "HtxPost" (printf "/reward/purchase/%d" .TaskID) "HtxTarget" "#rewards-content" "HtxSwap" "outerHTML" "HtxConfirm" (printf "Purchase this reward for %d points?" .PointCost.Int64) "Class" "btn-sm" "Disabled" (not $canAfford)) }}
+					{{ end }}
+				</div>
+			</li>
+			{{ end }}
+		</ul>
+		{{ else }}
+		{{ if eq .Data.Role "manager" }}
+			{{ template "emptyState" (dict "Message" "Create rewards for your worker using the + button.") }}
+		{{ else }}
+			{{ template "emptyState" (dict "Message" "No rewards available.") }}
+		{{ end }}
+		{{ end }}
+	</section>
+
+	<!-- Create Reward Modal (manager only) -->
+	{{ if eq .Data.Role "manager" }}
+	<dialog id="createRewardModal" class="modal">
+		<div class="modal-box bg-gray-900 border border-emerald-400 max-w-lg">
+			<h3 class="text-xl font-bold text-emerald-400 mb-4">Create Reward</h3>
+			<form hx-post="/reward/create" hx-target="#rewards-content" hx-swap="outerHTML" class="flex flex-col gap-4" id="create-reward-form">
+				{{ template "formGroup" (dict "ID" "reward-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Reward name") }}
+				{{ template "formGroup" (dict "ID" "reward-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What the worker gets...") }}
+				{{ template "formGroup" (dict "ID" "reward-cost" "Name" "point_cost" "Label" "Point Cost" "Type" "number" "Required" true "Placeholder" "How many points to purchase") }}
+
+				<div class="grid grid-cols-3 gap-4">
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="reward-requires-image" name="requires_image" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
+						<span class="text-gray-300 text-sm">Image</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="reward-requires-video" name="requires_video" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
+						<span class="text-gray-300 text-sm">Video</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="reward-requires-audio" name="requires_audio" class="checkbox checkbox-sm checkbox-success" onchange="toggleRewardMediaFields('create')" />
+						<span class="text-gray-300 text-sm">Audio</span>
+					</label>
+				</div>
+
+				<div id="reward-media-counts" class="hidden flex flex-col gap-3">
+					<div id="reward-image-count-field" class="hidden">
+						{{ template "formGroup" (dict "ID" "reward-num-images" "Name" "num_images_required" "Label" "Number of Images" "Type" "number" "Placeholder" "1" "Value" "1") }}
+					</div>
+					<div id="reward-video-count-field" class="hidden">
+						{{ template "formGroup" (dict "ID" "reward-num-videos" "Name" "num_videos_required" "Label" "Number of Videos" "Type" "number" "Placeholder" "1" "Value" "1") }}
+					</div>
+					<div id="reward-audio-count-field" class="hidden">
+						{{ template "formGroup" (dict "ID" "reward-num-audio" "Name" "num_audio_required" "Label" "Number of Audio Files" "Type" "number" "Placeholder" "1" "Value" "1") }}
+					</div>
+				</div>
+
+				<div id="reward-duration-field" class="hidden">
+					{{ template "formGroup" (dict "ID" "reward-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Placeholder" "1440") }}
+				</div>
+
+				{{ template "formGroup" (dict "ID" "reward-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
+
+				{{ template "secondaryButton" (dict "Text" "Create Reward" "Class" "w-full mt-2 font-semibold") }}
+			</form>
+		</div>
+		<form method="dialog" class="modal-backdrop"><button>close</button></form>
+	</dialog>
+
+	<!-- Edit Reward Modal -->
+	<dialog id="editRewardModal" class="modal">
+		<div class="modal-box bg-gray-900 border border-emerald-400 max-w-lg">
+			<h3 class="text-xl font-bold text-emerald-400 mb-4">Edit Reward</h3>
+			<form id="editRewardForm" hx-target="#rewards-content" hx-swap="outerHTML" class="flex flex-col gap-4" onsubmit="return true;">
+				<input type="hidden" id="edit-reward-id" name="task_id" />
+				{{ template "formGroup" (dict "ID" "edit-reward-title" "Name" "title" "Label" "Title" "Type" "text" "Required" true "Placeholder" "Reward name") }}
+				{{ template "formGroup" (dict "ID" "edit-reward-desc" "Name" "description" "Label" "Description" "Type" "textarea" "Placeholder" "What the worker gets...") }}
+				{{ template "formGroup" (dict "ID" "edit-reward-cost" "Name" "point_cost" "Label" "Point Cost" "Type" "number" "Required" true "Placeholder" "How many points to purchase") }}
+				{{ template "formGroup" (dict "ID" "edit-reward-duration" "Name" "duration_minutes" "Label" "Duration (minutes)" "Type" "number" "Placeholder" "1440") }}
+
+				<div class="grid grid-cols-3 gap-4">
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="edit-requires-image" name="requires_image" class="checkbox checkbox-sm checkbox-success" />
+						<span class="text-gray-300 text-sm">Image</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="edit-requires-video" name="requires_video" class="checkbox checkbox-sm checkbox-success" />
+						<span class="text-gray-300 text-sm">Video</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" id="edit-requires-audio" name="requires_audio" class="checkbox checkbox-sm checkbox-success" />
+						<span class="text-gray-300 text-sm">Audio</span>
+					</label>
+				</div>
+
+				{{ template "formGroup" (dict "ID" "edit-reward-wordcount" "Name" "min_word_count" "Label" "Min Word Count" "Type" "number" "Placeholder" "Optional") }}
+
+				<button type="submit" class="btn rounded text-emerald-600 border border-emerald-400 hover:bg-emerald-400 hover:text-black bg-transparent p-2 duration-300 w-full mt-2 font-semibold">
+					Update Reward
+				</button>
+			</form>
+		</div>
+		<form method="dialog" class="modal-backdrop"><button>close</button></form>
+	</dialog>
+
+	<script>
+		function openEditRewardModal(taskId, title, description, pointCost, duration, reqImage, reqVideo, reqAudio, wordCount) {
+			document.getElementById('edit-reward-id').value = taskId;
+			document.getElementById('edit-reward-title').value = title;
+			document.getElementById('edit-reward-desc').value = description;
+			document.getElementById('edit-reward-cost').value = pointCost;
+			document.getElementById('edit-reward-duration').value = duration;
+			document.getElementById('edit-requires-image').checked = reqImage === 1;
+			document.getElementById('edit-requires-video').checked = reqVideo === 1;
+			document.getElementById('edit-requires-audio').checked = reqAudio === 1;
+			document.getElementById('edit-reward-wordcount').value = wordCount > 0 ? wordCount : '';
+			
+			document.getElementById('editRewardForm').setAttribute('hx-put', '/reward/' + taskId);
+			htmx.process(document.getElementById('editRewardForm'));
+			
+			editRewardModal.showModal();
+		}
+
+		document.getElementById('editRewardForm').addEventListener('htmx:afterSwap', function() {
+			editRewardModal.close();
+		});
+
+		function toggleRewardMediaFields(context) {
+			const imageCheck = document.getElementById(context === 'create' ? 'reward-requires-image' : 'edit-reward-requires-image');
+			const videoCheck = document.getElementById(context === 'create' ? 'reward-requires-video' : 'edit-reward-requires-video');
+			const audioCheck = document.getElementById(context === 'create' ? 'reward-requires-audio' : 'edit-reward-requires-audio');
+
+			const imageCountField = document.getElementById(context === 'create' ? 'reward-image-count-field' : 'edit-reward-image-count-field');
+			const videoCountField = document.getElementById(context === 'create' ? 'reward-video-count-field' : 'edit-reward-video-count-field');
+			const audioCountField = document.getElementById(context === 'create' ? 'reward-audio-count-field' : 'edit-reward-audio-count-field');
+			const durationField = document.getElementById(context === 'create' ? 'reward-duration-field' : 'edit-reward-duration-field');
+			const mediaCounts = document.getElementById(context === 'create' ? 'reward-media-counts' : 'edit-reward-media-counts');
+
+			if (imageCheck && imageCountField) {
+				if (imageCheck.checked) {
+					imageCountField.classList.remove('hidden');
+				} else {
+					imageCountField.classList.add('hidden');
+				}
+			}
+
+			if (videoCheck && videoCountField) {
+				if (videoCheck.checked) {
+					videoCountField.classList.remove('hidden');
+				} else {
+					videoCountField.classList.add('hidden');
+				}
+			}
+
+			if (audioCheck && audioCountField) {
+				if (audioCheck.checked) {
+					audioCountField.classList.remove('hidden');
+				} else {
+					audioCountField.classList.add('hidden');
+				}
+			}
+
+			if (mediaCounts) {
+				if ((imageCheck && imageCheck.checked) || (videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
+					mediaCounts.classList.remove('hidden');
+				} else {
+					mediaCounts.classList.add('hidden');
+				}
+			}
+
+			if (durationField) {
+				if ((videoCheck && videoCheck.checked) || (audioCheck && audioCheck.checked)) {
+					durationField.classList.remove('hidden');
+				} else {
+					durationField.classList.add('hidden');
+				}
+			}
+		}
+	</script>
+	{{ end }}
+
+	{{ end }}
+</div>
+{{ end }}

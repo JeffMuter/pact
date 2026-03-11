@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -204,7 +203,7 @@ func ServeUploadedFile(w http.ResponseWriter, r *http.Request, userId int) {
 	
 	// Check if user is the manager of this connection
 	queries := database.GetQueries()
-	ctx := context.Background()
+	ctx := r.Context()
 	
 	conn, err := queries.GetActiveConnectionDetails(ctx, connectionId)
 	if err != nil {

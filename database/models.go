@@ -18,6 +18,9 @@ type AssignedTask struct {
 	Status            string
 	Points            int64
 	DurationMinutes   int64
+	TimerDays         sql.NullInt64
+	TimerHours        sql.NullInt64
+	TimerMinutes      sql.NullInt64
 	AssignedAt        sql.NullTime
 	DueTime           time.Time
 	RequiresImage     int64
@@ -63,6 +66,9 @@ type Task struct {
 	Type                   string
 	DefaultPoints          int64
 	DefaultDurationMinutes int64
+	TimerDays              sql.NullInt64
+	TimerHours             sql.NullInt64
+	TimerMinutes           sql.NullInt64
 	RequiresImage          int64
 	NumImagesRequired      int64
 	RequiresVideo          int64

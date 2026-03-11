@@ -9,12 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func ValidateUsernamePassword(email string, password string) (database.User, error) {
+func ValidateUsernamePassword(ctx context.Context, email string, password string) (database.User, error) {
 	fmt.Println(email + " " + password)
 	var user database.User
 
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	user, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {

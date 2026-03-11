@@ -11,9 +11,8 @@ import (
 // CreateConnectionRequest takes the current user's id and the email they submitted
 // to send a request. Returns an error if the receiver doesn't exist or the request
 // can't be created (e.g. duplicate, self-request).
-func CreateConnectionRequest(userId int, senderRole, email string) error {
+func CreateConnectionRequest(ctx context.Context, userId int, senderRole, email string) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	receiverUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
@@ -46,9 +45,8 @@ func CreateConnectionRequest(userId int, senderRole, email string) error {
 }
 
 // getUsersPendingConnectionRequests returns all active incoming requests for a user.
-func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingRequestsRow, error) {
+func getUsersPendingConnectionRequests(ctx context.Context, userId int) ([]database.GetUserPendingRequestsRow, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	rows, err := queries.GetUserPendingRequests(ctx, int64(userId))
 	if err != nil {
@@ -61,9 +59,8 @@ func getUsersPendingConnectionRequests(userId int) ([]database.GetUserPendingReq
 // acceptConnectionRequest looks up the request by ID, creates the connection using
 // the roles stored in the request, and deactivates the request — all within a
 // single transaction so partial state can't occur.
-func acceptConnectionRequest(requestId int64) error {
+func acceptConnectionRequest(ctx context.Context, requestId int64) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -105,11 +102,18 @@ func acceptConnectionRequest(requestId int64) error {
 }
 
 // rejectConnectionRequest deactivates a request without creating a connection.
-func rejectConnectionRequest(requestId int64) error {
-	queries := database.GetQueries()
-	ctx := context.Background()
+func rejectConnectionRequest(ctx context.Context, requestId int64) error {
+	db := database.GetDB()
 
-	req, err := queries.GetConnectionRequestById(ctx, requestId)
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("could not begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	qtx := database.New(tx)
+
+	req, err := qtx.GetConnectionRequestById(ctx, requestId)
 	if err != nil {
 		return fmt.Errorf("could not find connection request %d: %w", requestId, err)
 	}
@@ -117,18 +121,21 @@ func rejectConnectionRequest(requestId int64) error {
 		return fmt.Errorf("connection request %d is already inactive", requestId)
 	}
 
-	err = queries.DeactivateConnectionRequest(ctx, requestId)
+	err = qtx.DeactivateConnectionRequest(ctx, requestId)
 	if err != nil {
 		return fmt.Errorf("could not deactivate request %d: %w", requestId, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("could not commit transaction: %w", err)
 	}
 
 	return nil
 }
 
 // getConnectionsByUserId returns all active connections for a user.
-func getConnectionsByUserId(userId int) ([]database.GetConnectionsByIdRow, error) {
+func getConnectionsByUserId(ctx context.Context, userId int) ([]database.GetConnectionsByIdRow, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	rows, err := queries.GetConnectionsById(ctx, int64(userId))
 	if err != nil {
@@ -139,9 +146,8 @@ func getConnectionsByUserId(userId int) ([]database.GetConnectionsByIdRow, error
 }
 
 // updateActiveConnection sets the given connection as active for the given user.
-func updateActiveConnection(userId, connectionId int) error {
+func updateActiveConnection(ctx context.Context, userId, connectionId int) error {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	err := queries.UpdateActiveConnection(ctx, database.UpdateActiveConnectionParams{
 		ActiveConnectionID: sql.NullInt64{Int64: int64(connectionId), Valid: true},
@@ -156,9 +162,8 @@ func updateActiveConnection(userId, connectionId int) error {
 
 // getActiveConnectionDetails returns the partner's id, username, and role for
 // the current user's active connection.
-func getActiveConnectionDetails(userId int) (int, string, string, error) {
+func getActiveConnectionDetails(ctx context.Context, userId int) (int, string, string, error) {
 	queries := database.GetQueries()
-	ctx := context.Background()
 
 	params := database.GetActiveConnectionUserDetailsParams{
 		ManagerID:   int64(userId),
@@ -182,9 +187,8 @@ func getActiveConnectionDetails(userId int) (int, string, string, error) {
 
 // deleteConnection removes a connection after verifying the user is part of it.
 // If the connection being deleted is the user's active connection, it clears that first.
-func deleteConnection(connectionId int, userId int) error {
+func deleteConnection(ctx context.Context, connectionId int, userId int) error {
 	db := database.GetDB()
-	ctx := context.Background()
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {

@@ -105,6 +105,12 @@ WHERE u.user_id = ?1;
 -- POINTS
 -- =====================
 
+-- name: GetUserRoleInConnection :one
+SELECT 
+  CASE WHEN manager_id = ? THEN 'manager' ELSE 'worker' END AS role
+FROM connections
+WHERE connection_id = ?;
+
 -- name: GetWorkerPoints :one
 SELECT worker_points FROM connections WHERE connection_id = ?;
 
@@ -121,10 +127,11 @@ UPDATE connections SET worker_points = worker_points - ? WHERE connection_id = ?
 -- name: CreateTask :one
 INSERT INTO tasks (
     manager_id, title, description, type, default_points,
-    default_duration_minutes, requires_image, num_images_required, requires_video, num_videos_required,
+    default_duration_minutes, timer_days, timer_hours, timer_minutes,
+    requires_image, num_images_required, requires_video, num_videos_required,
     requires_audio, num_audio_required, min_word_count, point_cost, is_bookmarked,
     repeat_frequency, punishment_task_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING task_id;
 
 -- name: GetTaskById :one
@@ -153,7 +160,8 @@ ORDER BY created_at DESC;
 -- name: UpdateTask :exec
 UPDATE tasks SET
     title = ?, description = ?, type = ?, default_points = ?,
-    default_duration_minutes = ?, requires_image = ?, num_images_required = ?, requires_video = ?, num_videos_required = ?,
+    default_duration_minutes = ?, timer_days = ?, timer_hours = ?, timer_minutes = ?,
+    requires_image = ?, num_images_required = ?, requires_video = ?, num_videos_required = ?,
     requires_audio = ?, num_audio_required = ?, min_word_count = ?, point_cost = ?,
     is_bookmarked = ?, repeat_frequency = ?, punishment_task_id = ?
 WHERE task_id = ? AND manager_id = ?;
@@ -173,9 +181,10 @@ ORDER BY created_at DESC;
 -- name: AssignTask :one
 INSERT INTO assigned_tasks (
     task_id, connection_id, worker_id, type, points,
-    duration_minutes, due_time, requires_image, num_images_required, requires_video, num_videos_required,
+    duration_minutes, timer_days, timer_hours, timer_minutes, due_time,
+    requires_image, num_images_required, requires_video, num_videos_required,
     requires_audio, num_audio_required, min_word_count, punishment_task_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING assigned_task_id;
 
 -- name: GetAssignedTaskById :one
@@ -191,6 +200,9 @@ SELECT
     at.status,
     at.points,
     at.duration_minutes,
+    at.timer_days,
+    at.timer_hours,
+    at.timer_minutes,
     at.assigned_at,
     at.due_time,
     at.requires_image,
@@ -224,6 +236,9 @@ SELECT
     at.status,
     at.points,
     at.duration_minutes,
+    at.timer_days,
+    at.timer_hours,
+    at.timer_minutes,
     at.assigned_at,
     at.due_time,
     at.requires_image,
@@ -349,7 +364,7 @@ WHERE ts.assigned_task_id = ?;
 -- name: GetAvailableRewards :many
 SELECT t.task_id, t.title, t.description, t.point_cost,
        t.requires_image, t.num_images_required, t.requires_video, t.num_videos_required, t.requires_audio, t.num_audio_required,
-       t.min_word_count, t.default_duration_minutes, t.default_points
+       t.min_word_count, t.default_duration_minutes, t.timer_days, t.timer_hours, t.timer_minutes, t.default_points
 FROM tasks t
 JOIN connections c ON t.manager_id = c.manager_id
 WHERE c.connection_id = ? AND t.type = 'reward'
@@ -397,7 +412,8 @@ DELETE FROM assigned_tasks WHERE assigned_task_id = ?;
 
 -- name: UpdateAssignedTask :exec
 UPDATE assigned_tasks SET
-    points = ?, duration_minutes = ?, due_time = ?, requires_image = ?, num_images_required = ?,
+    points = ?, duration_minutes = ?, timer_days = ?, timer_hours = ?, timer_minutes = ?, due_time = ?,
+    requires_image = ?, num_images_required = ?,
     requires_video = ?, num_videos_required = ?, requires_audio = ?, num_audio_required = ?, min_word_count = ?
 WHERE assigned_task_id = ?;
 

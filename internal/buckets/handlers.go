@@ -1,7 +1,6 @@
 package buckets
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -47,10 +46,29 @@ func HandleCreateTask(w http.ResponseWriter, r *http.Request) {
 		defaultPoints = 20
 	}
 
-	durationMinutes, _ := strconv.ParseInt(r.FormValue("duration_minutes"), 10, 64)
-	if durationMinutes <= 0 {
-		durationMinutes = 1440
+	// Parse timer fields
+	var timerDays, timerHours, timerMinutes sql.NullInt64
+	if td := r.FormValue("timer_days"); td != "" {
+		val, err := strconv.ParseInt(td, 10, 64)
+		if err == nil && val >= 0 {
+			timerDays = sql.NullInt64{Int64: val, Valid: true}
+		}
 	}
+	if th := r.FormValue("timer_hours"); th != "" {
+		val, err := strconv.ParseInt(th, 10, 64)
+		if err == nil && val >= 0 {
+			timerHours = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if tm := r.FormValue("timer_minutes"); tm != "" {
+		val, err := strconv.ParseInt(tm, 10, 64)
+		if err == nil && val >= 0 {
+			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+
+	// Calculate duration from timer fields
+	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)
 
 	requiresImage := int64(0)
 	numImagesRequired := int64(1)
@@ -116,7 +134,7 @@ func HandleCreateTask(w http.ResponseWriter, r *http.Request) {
 		description = sql.NullString{String: desc, Valid: true}
 	}
 
-	connectionId, err := getActiveConnectionId(userId)
+	connectionId, err := getActiveConnectionId(r.Context(), userId)
 	if err != nil {
 		http.Error(w, "no active connection", http.StatusBadRequest)
 		return
@@ -125,12 +143,15 @@ func HandleCreateTask(w http.ResponseWriter, r *http.Request) {
 	assignNow := r.FormValue("assign_now")
 
 	if assignNow == "on" {
-		_, err = createAndAssignTask(int64(userId), connectionId, database.CreateTaskParams{
+		_, err = createAndAssignTask(r.Context(), int64(userId), connectionId, database.CreateTaskParams{
 			Title:                  title,
 			Description:            description,
 			Type:                   taskType,
 			DefaultPoints:          defaultPoints,
 			DefaultDurationMinutes: durationMinutes,
+			TimerDays:              timerDays,
+			TimerHours:             timerHours,
+			TimerMinutes:           timerMinutes,
 			RequiresImage:          requiresImage,
 			NumImagesRequired:      numImagesRequired,
 			RequiresVideo:          requiresVideo,
@@ -142,14 +163,17 @@ func HandleCreateTask(w http.ResponseWriter, r *http.Request) {
 			IsBookmarked:           isBookmarked,
 			RepeatFrequency:        repeatFrequency,
 			PunishmentTaskID:       punishmentTaskID,
-		}, durationMinutes, defaultPoints)
+		}, durationMinutes, defaultPoints, timerDays, timerHours, timerMinutes)
 	} else {
-		_, err = createTaskTemplate(int64(userId), database.CreateTaskParams{
+		_, err = createTaskTemplate(r.Context(), int64(userId), database.CreateTaskParams{
 			Title:                  title,
 			Description:            description,
 			Type:                   taskType,
 			DefaultPoints:          defaultPoints,
 			DefaultDurationMinutes: durationMinutes,
+			TimerDays:              timerDays,
+			TimerHours:             timerHours,
+			TimerMinutes:           timerMinutes,
 			RequiresImage:          requiresImage,
 			NumImagesRequired:      numImagesRequired,
 			RequiresVideo:          requiresVideo,
@@ -192,7 +216,7 @@ func HandleAssignSavedTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connectionId, err := getActiveConnectionId(userId)
+	connectionId, err := getActiveConnectionId(r.Context(), userId)
 	if err != nil {
 		http.Error(w, "no active connection", http.StatusBadRequest)
 		return
@@ -203,12 +227,31 @@ func HandleAssignSavedTask(w http.ResponseWriter, r *http.Request) {
 		points = 20
 	}
 
-	durationMinutes, _ := strconv.ParseInt(r.FormValue("duration_minutes"), 10, 64)
-	if durationMinutes <= 0 {
-		durationMinutes = 1440
+	// Parse timer fields
+	var timerDays, timerHours, timerMinutes sql.NullInt64
+	if td := r.FormValue("timer_days"); td != "" {
+		val, err := strconv.ParseInt(td, 10, 64)
+		if err == nil && val >= 0 {
+			timerDays = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if th := r.FormValue("timer_hours"); th != "" {
+		val, err := strconv.ParseInt(th, 10, 64)
+		if err == nil && val >= 0 {
+			timerHours = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if tm := r.FormValue("timer_minutes"); tm != "" {
+		val, err := strconv.ParseInt(tm, 10, 64)
+		if err == nil && val >= 0 {
+			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
+		}
 	}
 
-	_, err = assignFromTemplate(int64(userId), taskId, connectionId, durationMinutes, points)
+	// Calculate duration from timer fields
+	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)
+
+	_, err = assignFromTemplate(r.Context(), int64(userId), taskId, connectionId, durationMinutes, points, timerDays, timerHours, timerMinutes)
 	if err != nil {
 		log.Printf("error assigning task %d: %v", taskId, err)
 		http.Error(w, "could not assign task", http.StatusInternalServerError)
@@ -239,7 +282,7 @@ func HandleSaveSubmission(w http.ResponseWriter, r *http.Request) {
 
 	submissionText := r.FormValue("submission_text")
 
-	err = saveSubmission(int64(userId), assignedTaskId, submissionText)
+	err = saveSubmission(r.Context(), int64(userId), assignedTaskId, submissionText)
 	if err != nil {
 		log.Printf("error saving submission for task %d: %v", assignedTaskId, err)
 		http.Error(w, "could not save submission", http.StatusInternalServerError)
@@ -272,7 +315,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 	submissionText := r.FormValue("submission_text")
 
 	queries := database.GetQueries()
-	ctx := context.Background()
+	ctx := r.Context()
 	task, err := queries.GetAssignedTaskById(ctx, assignedTaskId)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
@@ -300,7 +343,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 		imagePaths, err = storage.SaveFiles(imageFiles, "image", task.ConnectionID, assignedTaskId)
 		if err != nil {
 			log.Printf("error saving images for task %d: %v", assignedTaskId, err)
-			http.Error(w, "could not save images: "+err.Error(), http.StatusBadRequest)
+			http.Error(w, "could not save images", http.StatusBadRequest)
 			return
 		}
 	}
@@ -314,7 +357,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 		videoPaths, err = storage.SaveFiles(videoFiles, "video", task.ConnectionID, assignedTaskId)
 		if err != nil {
 			log.Printf("error saving videos for task %d: %v", assignedTaskId, err)
-			http.Error(w, "could not save videos: "+err.Error(), http.StatusBadRequest)
+			http.Error(w, "could not save videos", http.StatusBadRequest)
 			return
 		}
 	}
@@ -328,7 +371,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 		audioPaths, err = storage.SaveFiles(audioFiles, "audio", task.ConnectionID, assignedTaskId)
 		if err != nil {
 			log.Printf("error saving audio for task %d: %v", assignedTaskId, err)
-			http.Error(w, "could not save audio: "+err.Error(), http.StatusBadRequest)
+			http.Error(w, "could not save audio", http.StatusBadRequest)
 			return
 		}
 	}
@@ -337,7 +380,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 	videoJSON, _ := json.Marshal(videoPaths)
 	audioJSON, _ := json.Marshal(audioPaths)
 
-	err = submitTask(int64(userId), assignedTaskId, submissionText, string(imageJSON), string(videoJSON), string(audioJSON))
+	err = submitTask(r.Context(), int64(userId), assignedTaskId, submissionText, string(imageJSON), string(videoJSON), string(audioJSON))
 	if err != nil {
 		log.Printf("error submitting task %d: %v", assignedTaskId, err)
 		if strings.Contains(err.Error(), "could not find assigned task") {
@@ -350,7 +393,7 @@ func HandleSubmitTask(w http.ResponseWriter, r *http.Request) {
 			</script>`)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "could not submit task", http.StatusBadRequest)
 		return
 	}
 
@@ -370,7 +413,7 @@ func HandleApproveTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = approveTask(int64(userId), assignedTaskId)
+	err = approveTask(r.Context(), int64(userId), assignedTaskId)
 	if err != nil {
 		log.Printf("error approving task %d: %v", assignedTaskId, err)
 		http.Error(w, "could not approve task", http.StatusInternalServerError)
@@ -393,7 +436,7 @@ func HandleDisapproveTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = disapproveTask(int64(userId), assignedTaskId)
+	err = disapproveTask(r.Context(), int64(userId), assignedTaskId)
 	if err != nil {
 		log.Printf("error disapproving task %d: %v", assignedTaskId, err)
 		http.Error(w, "could not disapprove task", http.StatusInternalServerError)
@@ -416,16 +459,16 @@ func HandlePurchaseReward(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connectionId, err := getActiveConnectionId(userId)
+	connectionId, err := getActiveConnectionId(r.Context(), userId)
 	if err != nil {
 		http.Error(w, "no active connection", http.StatusBadRequest)
 		return
 	}
 
-	_, err = purchaseReward(int64(userId), connectionId, taskId)
+	_, err = purchaseReward(r.Context(), int64(userId), connectionId, taskId)
 	if err != nil {
 		log.Printf("error purchasing reward %d: %v", taskId, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "could not purchase reward", http.StatusBadRequest)
 		return
 	}
 
@@ -445,7 +488,7 @@ func HandleDeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteTaskTemplate(int64(userId), taskId)
+	err = deleteTaskTemplate(r.Context(), int64(userId), taskId)
 	if err != nil {
 		log.Printf("error deleting task %d: %v", taskId, err)
 		http.Error(w, "could not delete task", http.StatusInternalServerError)
@@ -524,7 +567,7 @@ func HandleCreateReward(w http.ResponseWriter, r *http.Request) {
 		description = sql.NullString{String: desc, Valid: true}
 	}
 
-	_, err = createTaskTemplate(int64(userId), database.CreateTaskParams{
+	_, err = createTaskTemplate(r.Context(), int64(userId), database.CreateTaskParams{
 		Title:                  title,
 		Description:            description,
 		Type:                   "reward",
@@ -624,7 +667,7 @@ func HandleUpdateReward(w http.ResponseWriter, r *http.Request) {
 		description = sql.NullString{String: desc, Valid: true}
 	}
 
-	err = updateTaskTemplate(int64(userId), taskId, database.UpdateTaskParams{
+	err = updateTaskTemplate(r.Context(), int64(userId), taskId, database.UpdateTaskParams{
 		Title:                  title,
 		Description:            description,
 		Type:                   "reward",
@@ -666,7 +709,7 @@ func HandleDeleteReward(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteTaskTemplate(int64(userId), taskId)
+	err = deleteTaskTemplate(r.Context(), int64(userId), taskId)
 	if err != nil {
 		log.Printf("error deleting reward %d: %v", taskId, err)
 		http.Error(w, "could not delete reward", http.StatusInternalServerError)
@@ -689,7 +732,7 @@ func HandleDeleteAssignedTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteAssignedTask(int64(userId), assignedTaskId)
+	err = deleteAssignedTask(r.Context(), int64(userId), assignedTaskId)
 	if err != nil {
 		log.Printf("error deleting assigned task %d: %v", assignedTaskId, err)
 		http.Error(w, "could not delete assigned task", http.StatusInternalServerError)
@@ -734,10 +777,29 @@ func HandleEditAssignedTask(w http.ResponseWriter, r *http.Request) {
 		points = 20
 	}
 
-	durationMinutes, _ := strconv.ParseInt(r.FormValue("duration_minutes"), 10, 64)
-	if durationMinutes <= 0 {
-		durationMinutes = 1440
+	// Parse timer fields
+	var timerDays, timerHours, timerMinutes sql.NullInt64
+	if td := r.FormValue("timer_days"); td != "" {
+		val, err := strconv.ParseInt(td, 10, 64)
+		if err == nil && val >= 0 {
+			timerDays = sql.NullInt64{Int64: val, Valid: true}
+		}
 	}
+	if th := r.FormValue("timer_hours"); th != "" {
+		val, err := strconv.ParseInt(th, 10, 64)
+		if err == nil && val >= 0 {
+			timerHours = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if tm := r.FormValue("timer_minutes"); tm != "" {
+		val, err := strconv.ParseInt(tm, 10, 64)
+		if err == nil && val >= 0 {
+			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+
+	// Calculate duration from timer fields
+	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)
 
 	requiresImage := int64(0)
 	numImagesRequired := int64(1)
@@ -772,10 +834,10 @@ func HandleEditAssignedTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = updateAssignedTask(int64(userId), assignedTaskId, title, description, points, durationMinutes, requiresImage, numImagesRequired, requiresVideo, numVideosRequired, requiresAudio, numAudioRequired, minWordCount)
+	err = updateAssignedTask(r.Context(), int64(userId), assignedTaskId, title, description, points, durationMinutes, timerDays, timerHours, timerMinutes, requiresImage, numImagesRequired, requiresVideo, numVideosRequired, requiresAudio, numAudioRequired, minWordCount)
 	if err != nil {
 		log.Printf("error updating assigned task %d: %v", assignedTaskId, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "could not update task", http.StatusBadRequest)
 		return
 	}
 

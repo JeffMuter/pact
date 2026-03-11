@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"pact/database"
 	"pact/internal/auth"
@@ -38,7 +38,43 @@ func ServeRegisteredNavbar(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeMemberNavbar(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{}
+	data := TemplateData{
+		Data: make(map[string]any),
+	}
+	
+	// Fetch username if available
+	userId, ok := r.Context().Value("userID").(int)
+	if ok && userId > 0 {
+		queries := database.GetQueries()
+		ctx := r.Context()
+		
+		username, err := queries.GetUsernameByUserId(ctx, int64(userId))
+		if err == nil && username != "" {
+			data.Data["Username"] = username
+		}
+		
+		// Fetch role and points for active connection
+		activeConnId, err := queries.GetActiveConnectionId(ctx, int64(userId))
+		if err == nil && activeConnId.Valid {
+			// Get user's role in the active connection
+			role, err := queries.GetUserRoleInConnection(ctx, database.GetUserRoleInConnectionParams{
+				ManagerID:    int64(userId),
+				ConnectionID: activeConnId.Int64,
+			})
+			if err == nil {
+				data.Data["UserRole"] = role
+				
+				// Only fetch and display points if user is a worker
+				if role == "worker" {
+					workerPoints, err := queries.GetWorkerPoints(ctx, activeConnId.Int64)
+					if err == nil {
+						data.Data["WorkerPoints"] = workerPoints
+					}
+				}
+			}
+		}
+	}
+	
 	RenderTemplateFraction(w, "memberNavbar", data)
 }
 
@@ -51,6 +87,29 @@ func ServeBucketsPage(w http.ResponseWriter, r *http.Request) {
 	data := buckets.BuildBucketsData(r)
 	RenderLayoutTemplate(w, r, "bucketsPage", data)
 }
+
+func ServeRewardsPage(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("HX-Request") == "true" {
+		data := buckets.BuildBucketsData(r)
+		RenderTemplateFraction(w, "rewards", data)
+		return
+	}
+
+	data := buckets.BuildBucketsData(r)
+	RenderLayoutTemplate(w, r, "rewardsPage", data)
+}
+
+func ServeHistoryPage(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("HX-Request") == "true" {
+		data := buckets.BuildBucketsData(r)
+		RenderTemplateFraction(w, "history", data)
+		return
+	}
+
+	data := buckets.BuildBucketsData(r)
+	RenderLayoutTemplate(w, r, "historyPage", data)
+}
+
 func ServeLoginPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Data: map[string]any{
@@ -95,10 +154,10 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	formEmail := r.FormValue("email")
 	formPassword := r.FormValue("password")
-	user, err := auth.ValidateUsernamePassword(formEmail, formPassword)
+	user, err := auth.ValidateUsernamePassword(r.Context(), formEmail, formPassword)
 	if err != nil {
 		fmt.Println("username & password validation failed")
-		http.Error(w, fmt.Sprintf("error validating user by email and password: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid email or password", http.StatusBadRequest)
 		return
 	}
 	auth.HandleLoginProcedure(w, r, &user)
@@ -107,7 +166,7 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("registration in progress...")
 	queries := database.GetQueries()
-	ctx := context.Background()
+	ctx := r.Context()
 
 	var user database.CreateUserParams
 
@@ -168,10 +227,11 @@ func ServeAccountPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := r.Context()
 	accountData, err := database.GetQueries().GetAccountPageData(ctx, int64(userId))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error getting account data: %v", err), http.StatusInternalServerError)
+		log.Printf("error getting account data for user %d: %v", userId, err)
+		http.Error(w, "unable to load account data", http.StatusInternalServerError)
 		return
 	}
 
@@ -224,7 +284,7 @@ func ServeHomePage(w http.ResponseWriter, r *http.Request) {
 
 func DeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 	queries := database.GetQueries()
-	ctx := context.Background()
+	ctx := r.Context()
 
 	userId, ok := r.Context().Value("userID").(int)
 	if !ok {
@@ -234,7 +294,8 @@ func DeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := queries.DeleteUser(ctx, int64(userId))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error deleting user: %v", err), http.StatusInternalServerError)
+		log.Printf("error deleting user %d: %v", userId, err)
+		http.Error(w, "unable to delete account", http.StatusInternalServerError)
 		return
 	}
 
