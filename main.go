@@ -9,6 +9,7 @@ import (
 	"pact/internal/pages"
 	"pact/internal/router"
 	"pact/internal/storage"
+	"pact/internal/stripe"
 	"time"
 )
 
@@ -34,7 +35,9 @@ func main() {
 		log.Fatalf("Failed to initialize storage: %v", err)
 	}
 
+	// Wire dependencies
 	buckets.SetRenderFunc(pages.RenderTemplateFraction)
+	stripe.SetDB(database.GetQueries())
 
 	go func() {
 		for {

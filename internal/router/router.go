@@ -46,8 +46,10 @@ func Router() *http.ServeMux {
 	mux.HandleFunc("POST /support/submit", auth.AuthMiddleware(support.HandleSupportTicketSubmission(database.GetDB())))
 
 	// stripe/membership
-	mux.HandleFunc("GET /stripe", auth.AuthMiddleware(stripe.ServeMembershipPage))
+	mux.HandleFunc("GET /membership", auth.AuthMiddleware(stripe.ServeMembershipPage))
 	mux.HandleFunc("POST /createSession", auth.AuthMiddleware(stripe.HandleCreateCheckoutSession))
+	mux.HandleFunc("POST /createPortalSession", auth.AuthMiddleware(stripe.HandleCreatePortalSession))
+	mux.HandleFunc("POST /webhook/stripe", stripe.HandleStripeWebhook)
 
 	// buckets/home pages
 	mux.HandleFunc("GET /buckets", auth.AuthMiddleware(pages.ServeBucketsPage))

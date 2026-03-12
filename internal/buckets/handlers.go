@@ -12,6 +12,37 @@ import (
 	"strings"
 )
 
+// parseTimerFields parses timer form values and returns timer fields with defaults if all are empty
+func parseTimerFields(r *http.Request) (timerDays, timerHours, timerMinutes sql.NullInt64) {
+	if td := r.FormValue("timer_days"); td != "" {
+		val, err := strconv.ParseInt(td, 10, 64)
+		if err == nil && val >= 0 {
+			timerDays = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if th := r.FormValue("timer_hours"); th != "" {
+		val, err := strconv.ParseInt(th, 10, 64)
+		if err == nil && val >= 0 {
+			timerHours = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+	if tm := r.FormValue("timer_minutes"); tm != "" {
+		val, err := strconv.ParseInt(tm, 10, 64)
+		if err == nil && val >= 0 {
+			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
+		}
+	}
+
+	// If all timer fields are null/empty, default to 1 day
+	if !timerDays.Valid && !timerHours.Valid && !timerMinutes.Valid {
+		timerDays = sql.NullInt64{Int64: 1, Valid: true}
+		timerHours = sql.NullInt64{Int64: 0, Valid: true}
+		timerMinutes = sql.NullInt64{Int64: 0, Valid: true}
+	}
+
+	return timerDays, timerHours, timerMinutes
+}
+
 func ServeBucketsContent(w http.ResponseWriter, r *http.Request) {
 	data := BuildBucketsData(r)
 	renderFraction(w, "buckets", data)
@@ -46,26 +77,8 @@ func HandleCreateTask(w http.ResponseWriter, r *http.Request) {
 		defaultPoints = 20
 	}
 
-	// Parse timer fields
-	var timerDays, timerHours, timerMinutes sql.NullInt64
-	if td := r.FormValue("timer_days"); td != "" {
-		val, err := strconv.ParseInt(td, 10, 64)
-		if err == nil && val >= 0 {
-			timerDays = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if th := r.FormValue("timer_hours"); th != "" {
-		val, err := strconv.ParseInt(th, 10, 64)
-		if err == nil && val >= 0 {
-			timerHours = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if tm := r.FormValue("timer_minutes"); tm != "" {
-		val, err := strconv.ParseInt(tm, 10, 64)
-		if err == nil && val >= 0 {
-			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
+	// Parse timer fields (with defaults if empty)
+	timerDays, timerHours, timerMinutes := parseTimerFields(r)
 
 	// Calculate duration from timer fields
 	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)
@@ -227,26 +240,8 @@ func HandleAssignSavedTask(w http.ResponseWriter, r *http.Request) {
 		points = 20
 	}
 
-	// Parse timer fields
-	var timerDays, timerHours, timerMinutes sql.NullInt64
-	if td := r.FormValue("timer_days"); td != "" {
-		val, err := strconv.ParseInt(td, 10, 64)
-		if err == nil && val >= 0 {
-			timerDays = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if th := r.FormValue("timer_hours"); th != "" {
-		val, err := strconv.ParseInt(th, 10, 64)
-		if err == nil && val >= 0 {
-			timerHours = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if tm := r.FormValue("timer_minutes"); tm != "" {
-		val, err := strconv.ParseInt(tm, 10, 64)
-		if err == nil && val >= 0 {
-			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
+	// Parse timer fields (with defaults if empty)
+	timerDays, timerHours, timerMinutes := parseTimerFields(r)
 
 	// Calculate duration from timer fields
 	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)
@@ -777,26 +772,8 @@ func HandleEditAssignedTask(w http.ResponseWriter, r *http.Request) {
 		points = 20
 	}
 
-	// Parse timer fields
-	var timerDays, timerHours, timerMinutes sql.NullInt64
-	if td := r.FormValue("timer_days"); td != "" {
-		val, err := strconv.ParseInt(td, 10, 64)
-		if err == nil && val >= 0 {
-			timerDays = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if th := r.FormValue("timer_hours"); th != "" {
-		val, err := strconv.ParseInt(th, 10, 64)
-		if err == nil && val >= 0 {
-			timerHours = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
-	if tm := r.FormValue("timer_minutes"); tm != "" {
-		val, err := strconv.ParseInt(tm, 10, 64)
-		if err == nil && val >= 0 {
-			timerMinutes = sql.NullInt64{Int64: val, Valid: true}
-		}
-	}
+	// Parse timer fields (with defaults if empty)
+	timerDays, timerHours, timerMinutes := parseTimerFields(r)
 
 	// Calculate duration from timer fields
 	durationMinutes := calculateDurationMinutes(timerDays, timerHours, timerMinutes)

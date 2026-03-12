@@ -27,6 +27,149 @@
 			window['addFileInput_' + taskId](mediaType, accept);
 		}
 	}
+
+	// Live countdown timer
+	function formatTime(ms) {
+		if (isNaN(ms) || ms <= 0) return 'Expired';
+		
+		const totalSeconds = Math.floor(ms / 1000);
+		const days = Math.floor(totalSeconds / 86400);
+		const hours = Math.floor((totalSeconds % 86400) / 3600);
+		const minutes = Math.floor((totalSeconds % 3600) / 60);
+		const seconds = totalSeconds % 60;
+		
+		let result = [];
+		if (days > 0) result.push(days + 'd');
+		if (hours > 0) result.push(hours + 'h');
+		if (minutes > 0) result.push(minutes + 'm');
+		if (days === 0 && hours === 0) result.push(seconds + 's');
+		
+		return result.join(' ') || '0s';
+	}
+
+	function updateCountdowns() {
+		const now = Date.now();
+		
+		// Update timer displays
+		document.querySelectorAll('[data-due-time]').forEach(function(el) {
+			const dueTimeStr = el.getAttribute('data-due-time');
+			if (!dueTimeStr) return;
+			
+			// Parse the date - Go's time.Time format should be parseable by Date constructor
+			const dueTime = new Date(dueTimeStr).getTime();
+			
+			// If parsing failed, skip this element
+			if (isNaN(dueTime)) {
+				console.error('Failed to parse due time:', dueTimeStr);
+				return;
+			}
+			
+			const remaining = dueTime - now;
+			
+			const textSpan = el.querySelector('.timer-text');
+			if (textSpan) {
+				textSpan.textContent = formatTime(remaining);
+				
+				// Visual indicator for expired/near-expiry
+				if (remaining <= 0) {
+					el.classList.add('text-red-500', 'font-bold');
+					el.classList.remove('text-gray-400', 'text-gray-300', 'text-yellow-400', 'text-orange-400');
+				} else if (remaining < 3600000) { // < 1 hour
+					el.classList.add('text-orange-400', 'font-bold');
+					el.classList.remove('text-gray-400', 'text-gray-300', 'text-yellow-400', 'text-red-500');
+				} else if (remaining < 86400000) { // < 1 day
+					el.classList.add('text-yellow-400', 'font-semibold');
+					el.classList.remove('text-gray-400', 'text-gray-300', 'text-orange-400', 'text-red-500');
+				} else {
+					el.classList.remove('text-red-500', 'text-orange-400', 'text-yellow-400', 'font-bold', 'font-semibold');
+					if (!el.classList.contains('text-gray-300')) {
+						el.classList.add('text-gray-400');
+					}
+				}
+			}
+		});
+		
+		// Update card borders based on urgency
+		document.querySelectorAll('[data-task-card]').forEach(function(card) {
+			const dueTimeStr = card.getAttribute('data-task-card');
+			if (!dueTimeStr) return;
+			
+			const dueTime = new Date(dueTimeStr).getTime();
+			if (isNaN(dueTime)) return;
+			
+			const remaining = dueTime - now;
+			
+			if (remaining <= 0) {
+				card.classList.remove('border-emerald-400', 'border-yellow-400', 'border-orange-400');
+				card.classList.add('border-red-500');
+			} else if (remaining < 3600000) { // < 1 hour
+				card.classList.remove('border-emerald-400', 'border-yellow-400', 'border-red-500');
+				card.classList.add('border-orange-400');
+			} else if (remaining < 86400000) { // < 1 day
+				card.classList.remove('border-emerald-400', 'border-orange-400', 'border-red-500');
+				card.classList.add('border-yellow-400');
+			} else {
+				card.classList.remove('border-yellow-400', 'border-orange-400', 'border-red-500');
+				card.classList.add('border-emerald-400');
+			}
+		});
+		
+		// Update modal borders and expired warnings
+		document.querySelectorAll('[data-modal-task]').forEach(function(modal) {
+			const dueTimeStr = modal.getAttribute('data-modal-task');
+			if (!dueTimeStr) return;
+			
+			const dueTime = new Date(dueTimeStr).getTime();
+			if (isNaN(dueTime)) return;
+			
+			const remaining = dueTime - now;
+			const expiredWarning = modal.querySelector('.expired-warning');
+			const lateSubmissionWarning = modal.querySelector('.late-submission-warning');
+			
+			if (remaining <= 0) {
+				modal.classList.remove('border-emerald-400', 'border-yellow-400', 'border-orange-400');
+				modal.classList.add('border-red-500');
+				if (expiredWarning) expiredWarning.classList.remove('hidden');
+				if (lateSubmissionWarning) lateSubmissionWarning.classList.add('hidden');
+			} else if (remaining < 3600000) { // < 1 hour
+				modal.classList.remove('border-emerald-400', 'border-yellow-400', 'border-red-500');
+				modal.classList.add('border-orange-400');
+				if (expiredWarning) expiredWarning.classList.add('hidden');
+				if (lateSubmissionWarning) lateSubmissionWarning.classList.add('hidden');
+			} else if (remaining < 86400000) { // < 1 day
+				modal.classList.remove('border-emerald-400', 'border-orange-400', 'border-red-500');
+				modal.classList.add('border-yellow-400');
+				if (expiredWarning) expiredWarning.classList.add('hidden');
+				if (lateSubmissionWarning) lateSubmissionWarning.classList.add('hidden');
+			} else {
+				modal.classList.remove('border-yellow-400', 'border-orange-400', 'border-red-500');
+				modal.classList.add('border-emerald-400');
+				if (expiredWarning) expiredWarning.classList.add('hidden');
+				if (lateSubmissionWarning) lateSubmissionWarning.classList.add('hidden');
+			}
+		});
+		
+		// Check for late submissions in review section (show late submission warning if submitted after deadline)
+		document.querySelectorAll('[data-check-late]').forEach(function(el) {
+			const dueTimeStr = el.getAttribute('data-check-late');
+			if (!dueTimeStr) return;
+			
+			const dueTime = new Date(dueTimeStr).getTime();
+			if (isNaN(dueTime)) return;
+			
+			// If current time is past due time, show this was submitted late
+			if (now > dueTime) {
+				el.classList.remove('hidden');
+			} else {
+				el.classList.add('hidden');
+			}
+		});
+	}
+
+	// Update every second
+	setInterval(updateCountdowns, 1000);
+	// Initial update
+	setTimeout(updateCountdowns, 100);
 </script>
 <div id="buckets-content" class="flex flex-col w-3/4 mx-auto">
 
@@ -57,20 +200,18 @@
 			{{ if .Data.TodoTasks }}
 			<ul class="space-y-3" data-section="todo-tasks">
 				{{ range $index, $task := .Data.TodoTasks }}
-				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }}" onclick="document.getElementById('task-{{ $task.AssignedTaskID }}').showModal()">
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }}" data-task-card="{{ .DueTime }}" onclick="document.getElementById('task-{{ $task.AssignedTaskID }}').showModal()">
 					<div class="flex justify-between items-start">
 						<div class="flex-1">
 							<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
 							{{ if .Description.Valid }}<p class="text-sm text-gray-400 mt-1">{{ .Description.String }}</p>{{ end }}
 							<!-- Timer badge on list item -->
-							{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}
-							<div class="flex items-center gap-1 text-xs text-gray-400 mt-2">
+							<div class="flex items-center gap-1 text-xs text-gray-400 mt-2" data-due-time="{{ formatISO .DueTime }}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
 								</svg>
-								{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}
+								<span class="timer-text">{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}{{ else }}Loading...{{ end }}</span>
 							</div>
-							{{ end }}
 						</div>
 						<div class="flex items-center gap-2 shrink-0 ml-4">
 							<div class="text-right">
@@ -96,28 +237,32 @@
 					</div>
 				</li>
 				<dialog id="task-{{ .AssignedTaskID }}" class="modal">
-					<div class="modal-box bg-gray-900 border border-emerald-400">
+					<div class="modal-box bg-gray-900 border border-emerald-400" data-modal-task="{{ formatISO .DueTime }}">
+						<!-- Expired Warning Banner -->
+						<div class="expired-warning hidden bg-red-500/20 border border-red-500 rounded-lg p-3 mb-4">
+							<div class="flex items-center gap-2">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+								</svg>
+								<div>
+									<p class="text-red-400 font-bold text-sm">Time Expired</p>
+									<p class="text-red-300 text-xs">This task is overdue. You can still submit, but it will be marked as late.</p>
+								</div>
+							</div>
+						</div>
+						
 						<h3 class="text-xl font-bold text-emerald-400 mb-2">{{ .Title }}</h3>
 						{{ if .Description.Valid }}<p class="text-gray-300 mb-4">{{ .Description.String }}</p>{{ end }}
 						<div class="flex flex-wrap gap-2 mb-4 text-sm">
 							<span class="font-semibold text-emerald-400">{{ .Points }} pts</span>
 							
 							<!-- Timer Display -->
-							{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}
-							<span class="flex items-center gap-1 text-gray-300">
+							<span class="flex items-center gap-1 text-gray-300" data-due-time="{{ formatISO .DueTime }}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
 								</svg>
-								{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}
+								<span class="timer-text">{{ if or .TimerDays.Valid .TimerHours.Valid .TimerMinutes.Valid }}{{ if .TimerDays.Valid }}{{ .TimerDays.Int64 }}d {{ end }}{{ if .TimerHours.Valid }}{{ .TimerHours.Int64 }}h {{ end }}{{ if .TimerMinutes.Valid }}{{ .TimerMinutes.Int64 }}m{{ end }}{{ else }}Loading...{{ end }}</span>
 							</span>
-							{{ else if .DurationMinutes }}
-							<span class="flex items-center gap-1 text-gray-300">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-								</svg>
-								{{ .DurationMinutes }} min
-							</span>
-							{{ end }}
 							
 							<!-- Media Requirements -->
 							{{ if .RequiresImage }}<span class="badge badge-outline badge-sm badge-info">{{ .NumImagesRequired }} Image{{ if gt .NumImagesRequired 1 }}s{{ end }}</span>{{ end }}
@@ -317,17 +462,39 @@
 			{{ if .Data.ReviewTasks }}
 			<ul class="space-y-3" data-section="review-tasks">
 				{{ range $index, $task := .Data.ReviewTasks }}
-				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }}" onclick="document.getElementById('review-{{ $task.AssignedTaskID }}').showModal()">
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }} data-task-card="{{ formatISO .DueTime }}" onclick="document.getElementById('review-{{ $task.AssignedTaskID }}').showModal()">
 					<div class="flex justify-between items-start">
-						<div>
+						<div class="flex-1">
 							<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
 							{{ if .Description.Valid }}<p class="text-sm text-gray-400 mt-1">{{ .Description.String }}</p>{{ end }}
+							<!-- Timer badge on list item -->
+							<div class="flex items-center gap-1 text-xs text-gray-400 mt-2" data-due-time="{{ formatISO .DueTime }}">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span class="timer-text">Expired</span>
+							</div>
 						</div>
-						<span class="text-emerald-400 font-bold shrink-0 ml-4">{{ .Points }} pts</span>
+						<div class="flex items-center gap-2 shrink-0 ml-4">
+							<span class="text-emerald-400 font-bold">{{ .Points }} pts</span>
+						</div>
 					</div>
 				</li>
 				<dialog id="review-{{ .AssignedTaskID }}" class="modal">
-					<div class="modal-box bg-gray-900 border border-emerald-400 max-w-3xl">
+					<div class="modal-box bg-gray-900 border border-emerald-400 max-w-3xl" data-modal-task="{{ formatISO .DueTime }}">
+						<!-- Late Submission Warning (if submitted after due time) -->
+						<div class="late-submission-warning hidden bg-yellow-500/20 border border-yellow-500 rounded-lg p-3 mb-4" data-check-late="{{ formatISO .DueTime }}">
+							<div class="flex items-center gap-2">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<div>
+									<p class="text-yellow-400 font-bold text-sm">Submitted Late</p>
+									<p class="text-yellow-300 text-xs">This task was submitted after the deadline.</p>
+								</div>
+							</div>
+						</div>
+						
 						<h3 class="text-xl font-bold text-emerald-400 mb-2">{{ .Title }}</h3>
 						{{ if .Description.Valid }}<p class="text-gray-300 mb-4">{{ .Description.String }}</p>{{ end }}
 						<p class="text-sm text-gray-400 mb-4">{{ .Points }} pts &middot; Awaiting review</p>

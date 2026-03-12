@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var funcMap = template.FuncMap{
@@ -48,6 +49,9 @@ var funcMap = template.FuncMap{
 			return defaultVal
 		}
 		return value
+	},
+	"formatISO": func(t time.Time) string {
+		return t.Format(time.RFC3339)
 	},
 }
 

@@ -1,0 +1,153 @@
+{{ define "content" }}
+
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    {{ if .Data.IsMember }}
+        <!-- Active Member View -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">Active Member</h1>
+            <p class="text-gray-400">You have full access to all premium features</p>
+        </div>
+
+        <div class="card bg-base-200 shadow-xl mb-6">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Your Membership
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Status</span>
+                        <span class="badge badge-success badge-lg">{{ .Data.SubscriptionStatus }}</span>
+                    </div>
+                    <div class="divider my-2"></div>
+                    <p class="text-sm text-gray-400">Manage your subscription, update payment methods, or view billing history using the customer portal.</p>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <button 
+                        onclick="openCustomerPortal()" 
+                        class="btn btn-primary">
+                        Manage Subscription
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features List -->
+        <div class="card bg-base-200 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Your Premium Features</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Unlimited task assignments and connections</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Advanced task scheduling and repeating tasks</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Priority support and feature requests</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-success flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Media uploads for task submissions</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    {{ else }}
+        <!-- Non-Member View -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">Unlock Premium Features</h1>
+            <p class="text-gray-400">Upgrade to get full access to task management and rewards</p>
+        </div>
+
+        <!-- Pricing Card -->
+        <div class="card bg-base-200 shadow-xl mb-6 border-2 border-primary">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <h2 class="text-5xl font-bold mb-2">$9.99<span class="text-xl text-gray-400">/month</span></h2>
+                    <p class="text-gray-400">Cancel anytime, no commitment</p>
+                </div>
+
+                <ul class="space-y-3 text-left mb-6">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Unlimited</strong> task assignments and connections</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Advanced</strong> task scheduling and repeating tasks</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Reward system</strong> with points and incentives</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Media uploads</strong> for task submissions</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Priority</strong> support and feature requests</span>
+                    </li>
+                </ul>
+
+                <button 
+                    onclick="startCheckout()" 
+                    class="btn btn-primary btn-lg w-full">
+                    Subscribe Now
+                </button>
+
+                <div class="flex items-center justify-center gap-4 mt-4 text-sm text-gray-400">
+                    <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Secure payment</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Cancel anytime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ or Benefits -->
+        <div class="alert bg-base-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Your subscription includes all future features and updates at no additional cost.</span>
+        </div>
+    {{ end }}
+</div>
+
+{{ end }}

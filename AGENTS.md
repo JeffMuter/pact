@@ -268,6 +268,41 @@ rows, err := queries.GetUserPendingRequests(ctx, userId)
 - Maps created to associate requests with desired roles
 - Being refactored to send comprehensive data to frontend
 
+### Recent Fix: Task Timer Countdown (2026-03-12)
+
+**Issue**: Task timers displayed static values and didn't count down in real-time.
+
+**Solution**: Implemented client-side JavaScript countdown with visual urgency system in `internal/templates/fractions/buckets.html`:
+
+**Core Functionality**:
+- `updateCountdowns()` runs every second via `setInterval()`
+- Calculates remaining time from `due_time` timestamp (stored in `data-due-time` attribute)
+- `formatTime()` converts milliseconds to human-readable format (e.g., "2d 5h 30m 15s")
+- Timer updates live without page refresh
+
+**Visual Urgency Indicators**:
+- **Timer text**: Gray → Yellow (< 1 day) → Orange (< 1 hour) → Red (expired)
+- **Card borders**: Emerald → Yellow → Orange → Red (matches timer urgency)
+- **Modal borders**: Same color progression when task is opened
+- **Font weight**: Bold when < 1 hour or expired, semibold when < 1 day
+
+**Expired Task Handling**:
+- To Do section: Shows "Time Expired" warning banner in modal
+- Worker can still submit expired tasks
+- Review section: Red clock icon for late submissions
+- "Submitted Late" warning banner in review modals
+
+**Data Attributes**:
+- `data-due-time` — Timer displays
+- `data-task-card` — To Do list items (border updates)
+- `data-modal-task` — To Do modals (border + expired warning)
+- `data-check-late` — Review section (late indicators)
+
+**Technical Details**:
+- No server-side changes required — `due_time` already in database and query responses
+- Thresholds: 1 day (86400000ms), 1 hour (3600000ms), expired (0)
+- JavaScript targets specific elements via data attributes for efficient updates
+
 ---
 
 ## Environment & Configuration

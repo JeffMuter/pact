@@ -431,3 +431,16 @@ SELECT ticket_id, user_id, email, issue_description, created_at
 FROM support_tickets
 WHERE user_id = ?
 ORDER BY created_at DESC;
+
+-- name: UpdateUserStripeCustomer :exec
+UPDATE users 
+SET stripe_customer_id = ?, is_member = 1
+WHERE user_id = ?;
+
+-- name: UpdateUserSubscription :exec
+UPDATE users 
+SET stripe_subscription_id = ?, subscription_status = ?, is_member = ?
+WHERE user_id = ?;
+
+-- name: GetUserByStripeCustomerId :one
+SELECT * FROM users WHERE stripe_customer_id = ?;

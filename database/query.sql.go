@@ -583,7 +583,7 @@ func (q *Queries) GetAllDueRepeatingTasks(ctx context.Context) ([]Task, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at FROM users
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, stripe_customer_id, stripe_subscription_id, subscription_status, created_at FROM users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -602,6 +602,9 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.ActiveConnectionID,
 			&i.IsMember,
+			&i.StripeCustomerID,
+			&i.StripeSubscriptionID,
+			&i.SubscriptionStatus,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -1637,7 +1640,7 @@ func (q *Queries) GetTaskById(ctx context.Context, taskID int64) (Task, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at FROM users WHERE email = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, stripe_customer_id, stripe_subscription_id, subscription_status, created_at FROM users WHERE email = ?
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -1650,13 +1653,16 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.ActiveConnectionID,
 		&i.IsMember,
+		&i.StripeCustomerID,
+		&i.StripeSubscriptionID,
+		&i.SubscriptionStatus,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT user_id, email, username, password_hash, active_connection_id, is_member, created_at from users WHERE user_id = ?
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, stripe_customer_id, stripe_subscription_id, subscription_status, created_at from users WHERE user_id = ?
 `
 
 func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
@@ -1669,6 +1675,31 @@ func (q *Queries) GetUserById(ctx context.Context, userID int64) (User, error) {
 		&i.PasswordHash,
 		&i.ActiveConnectionID,
 		&i.IsMember,
+		&i.StripeCustomerID,
+		&i.StripeSubscriptionID,
+		&i.SubscriptionStatus,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserByStripeCustomerId = `-- name: GetUserByStripeCustomerId :one
+SELECT user_id, email, username, password_hash, active_connection_id, is_member, stripe_customer_id, stripe_subscription_id, subscription_status, created_at FROM users WHERE stripe_customer_id = ?
+`
+
+func (q *Queries) GetUserByStripeCustomerId(ctx context.Context, stripeCustomerID sql.NullString) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByStripeCustomerId, stripeCustomerID)
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.Email,
+		&i.Username,
+		&i.PasswordHash,
+		&i.ActiveConnectionID,
+		&i.IsMember,
+		&i.StripeCustomerID,
+		&i.StripeSubscriptionID,
+		&i.SubscriptionStatus,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -1973,6 +2004,45 @@ type UpdateTaskRepeatConnectionParams struct {
 
 func (q *Queries) UpdateTaskRepeatConnection(ctx context.Context, arg UpdateTaskRepeatConnectionParams) error {
 	_, err := q.db.ExecContext(ctx, updateTaskRepeatConnection, arg.RepeatConnectionID, arg.TaskID, arg.ManagerID)
+	return err
+}
+
+const updateUserStripeCustomer = `-- name: UpdateUserStripeCustomer :exec
+UPDATE users 
+SET stripe_customer_id = ?, is_member = 1
+WHERE user_id = ?
+`
+
+type UpdateUserStripeCustomerParams struct {
+	StripeCustomerID sql.NullString
+	UserID           int64
+}
+
+func (q *Queries) UpdateUserStripeCustomer(ctx context.Context, arg UpdateUserStripeCustomerParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserStripeCustomer, arg.StripeCustomerID, arg.UserID)
+	return err
+}
+
+const updateUserSubscription = `-- name: UpdateUserSubscription :exec
+UPDATE users 
+SET stripe_subscription_id = ?, subscription_status = ?, is_member = ?
+WHERE user_id = ?
+`
+
+type UpdateUserSubscriptionParams struct {
+	StripeSubscriptionID sql.NullString
+	SubscriptionStatus   sql.NullString
+	IsMember             int64
+	UserID               int64
+}
+
+func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubscriptionParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserSubscription,
+		arg.StripeSubscriptionID,
+		arg.SubscriptionStatus,
+		arg.IsMember,
+		arg.UserID,
+	)
 	return err
 }
 

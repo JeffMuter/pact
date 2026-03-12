@@ -17,6 +17,9 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     active_connection_id INTEGER DEFAULT NULL,
     is_member INTEGER NOT NULL DEFAULT 0,
+    stripe_customer_id TEXT UNIQUE DEFAULT NULL,
+    stripe_subscription_id TEXT UNIQUE DEFAULT NULL,
+    subscription_status TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (active_connection_id) REFERENCES connections(connection_id)
 );

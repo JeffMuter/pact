@@ -104,11 +104,14 @@ type TaskSubmission struct {
 }
 
 type User struct {
-	UserID             int64
-	Email              string
-	Username           string
-	PasswordHash       string
-	ActiveConnectionID sql.NullInt64
-	IsMember           int64
-	CreatedAt          sql.NullTime
+	UserID               int64
+	Email                string
+	Username             string
+	PasswordHash         string
+	ActiveConnectionID   sql.NullInt64
+	IsMember             int64
+	StripeCustomerID     sql.NullString
+	StripeSubscriptionID sql.NullString
+	SubscriptionStatus   sql.NullString
+	CreatedAt            sql.NullTime
 }
