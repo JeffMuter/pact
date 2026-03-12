@@ -44,7 +44,7 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
 		<!-- To Do -->
 		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
@@ -55,9 +55,9 @@
 				{{ end }}
 			</div>
 			{{ if .Data.TodoTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.TodoTasks }}
-				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer" onclick="document.getElementById('task-{{ .AssignedTaskID }}').showModal()">
+			<ul class="space-y-3" data-section="todo-tasks">
+				{{ range $index, $task := .Data.TodoTasks }}
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }}" onclick="document.getElementById('task-{{ $task.AssignedTaskID }}').showModal()">
 					<div class="flex justify-between items-start">
 						<div class="flex-1">
 							<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
@@ -297,6 +297,14 @@
 					<form method="dialog" class="modal-backdrop"><button>close</button></form>
 				</dialog>
 				{{ end }}
+				{{ if gt .Data.TodoOverflow 0 }}
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card" onclick="toggleSection('todo-tasks')">
+					<div class="flex justify-between items-center">
+						<h4 class="text-lg font-semibold text-gray-400">...</h4>
+						<p class="text-sm text-gray-400">{{ .Data.TodoOverflow }} more card{{ if gt .Data.TodoOverflow 1 }}s{{ end }}</p>
+					</div>
+				</li>
+				{{ end }}
 			</ul>
 			{{ else }}
 			{{ template "emptyState" (dict "Message" "No tasks to do.") }}
@@ -307,9 +315,9 @@
 		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
 			<h3 class="text-2xl font-bold text-emerald-400 mb-4">In Review</h3>
 			{{ if .Data.ReviewTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.ReviewTasks }}
-				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer" onclick="document.getElementById('review-{{ .AssignedTaskID }}').showModal()">
+			<ul class="space-y-3" data-section="review-tasks">
+				{{ range $index, $task := .Data.ReviewTasks }}
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer{{ if ge $index 5 }} hidden collapsed-item{{ end }}" onclick="document.getElementById('review-{{ $task.AssignedTaskID }}').showModal()">
 					<div class="flex justify-between items-start">
 						<div>
 							<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
@@ -403,6 +411,14 @@
 					<form method="dialog" class="modal-backdrop"><button>close</button></form>
 				</dialog>
 				{{ end }}
+				{{ if gt .Data.ReviewOverflow 0 }}
+				<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card" onclick="toggleSection('review-tasks')">
+					<div class="flex justify-between items-center">
+						<h4 class="text-lg font-semibold text-gray-400">...</h4>
+						<p class="text-sm text-gray-400">{{ .Data.ReviewOverflow }} more card{{ if gt .Data.ReviewOverflow 1 }}s{{ end }}</p>
+					</div>
+				</li>
+				{{ end }}
 			</ul>
 			{{ else }}
 			{{ template "emptyState" (dict "Message" "No tasks in review.") }}
@@ -415,9 +431,9 @@
 	{{ if .Data.SavedTasks }}
 	<section class="mt-8 p-6 border border-emerald-400 rounded-lg bg-gray-900">
 		<h3 class="text-2xl font-bold text-emerald-400 mb-4">Saved Tasks</h3>
-		<ul class="space-y-3">
-			{{ range .Data.SavedTasks }}
-			<li class="p-4 border rounded border-emerald-400 bg-black">
+		<ul class="space-y-3" data-section="saved-tasks">
+			{{ range $index, $task := .Data.SavedTasks }}
+			<li class="p-4 border rounded border-emerald-400 bg-black{{ if ge $index 5 }} hidden collapsed-item{{ end }}">
 				<div class="flex justify-between items-start cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180')">
 					<div>
 						<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
@@ -464,10 +480,36 @@
 				</div>
 			</li>
 			{{ end }}
+			{{ if gt .Data.SavedOverflow 0 }}
+			<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card" onclick="toggleSection('saved-tasks')">
+				<div class="flex justify-between items-center">
+					<h4 class="text-lg font-semibold text-gray-400">...</h4>
+					<p class="text-sm text-gray-400">{{ .Data.SavedOverflow }} more card{{ if gt .Data.SavedOverflow 1 }}s{{ end }}</p>
+				</div>
+			</li>
+			{{ end }}
 		</ul>
 	</section>
 	{{ end }}
 	{{ end }}
+
+	<script>
+		function toggleSection(sectionName) {
+			const list = document.querySelector('[data-section="' + sectionName + '"]');
+			if (!list) return;
+			
+			const collapsedItems = list.querySelectorAll('.collapsed-item');
+			const expansionCard = list.querySelector('.expansion-card');
+			
+			collapsedItems.forEach(function(item) {
+				item.classList.toggle('hidden');
+			});
+			
+			if (expansionCard) {
+				expansionCard.style.display = 'none';
+			}
+		}
+	</script>
 
 	<!-- Create Task Modal (manager only) -->
 	{{ if eq .Data.Role "manager" }}

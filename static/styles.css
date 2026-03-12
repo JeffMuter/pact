@@ -7,3 +7,17 @@
     transform: rotate(180deg);
   }
 }
+
+@layer components {
+  .dropdown-hover {
+    @apply relative inline-block;
+  }
+  
+  .dropdown-hover .dropdown-content {
+    @apply hidden absolute right-0 z-50;
+  }
+  
+  .dropdown-hover:hover .dropdown-content {
+    @apply block;
+  }
+}

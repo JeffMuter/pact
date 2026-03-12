@@ -58,6 +58,14 @@ type Session struct {
 	ExpiresAt string
 }
 
+type SupportTicket struct {
+	TicketID         int64
+	UserID           int64
+	Email            string
+	IssueDescription string
+	CreatedAt        sql.NullTime
+}
+
 type Task struct {
 	TaskID                 int64
 	ManagerID              int64

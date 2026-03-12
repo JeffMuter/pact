@@ -421,3 +421,13 @@ WHERE assigned_task_id = ?;
 UPDATE tasks SET
     title = ?, description = ?
 WHERE task_id = ?;
+
+-- name: CreateSupportTicket :exec
+INSERT INTO support_tickets (user_id, email, issue_description)
+VALUES (?, ?, ?);
+
+-- name: GetSupportTicketsByUserId :many
+SELECT ticket_id, user_id, email, issue_description, created_at
+FROM support_tickets
+WHERE user_id = ?
+ORDER BY created_at DESC;

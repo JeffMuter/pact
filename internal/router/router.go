@@ -2,12 +2,14 @@ package router
 
 import (
 	"net/http"
+	"pact/database"
 	"pact/internal/auth"
 	"pact/internal/buckets"
 	"pact/internal/connections"
 	"pact/internal/pages"
 	"pact/internal/storage"
 	"pact/internal/stripe"
+	"pact/internal/support"
 )
 
 func Router() *http.ServeMux {
@@ -38,6 +40,10 @@ func Router() *http.ServeMux {
 	// account page
 	mux.HandleFunc("GET /account", auth.AuthMiddleware(pages.ServeAccountPage))
 	mux.HandleFunc("DELETE /deleteAccount", auth.AuthMiddleware(pages.DeleteAccountHandler))
+
+	// support
+	mux.HandleFunc("GET /support", auth.AuthMiddleware(support.ServeSupportPage))
+	mux.HandleFunc("POST /support/submit", auth.AuthMiddleware(support.HandleSupportTicketSubmission(database.GetDB())))
 
 	// stripe/membership
 	mux.HandleFunc("GET /stripe", auth.AuthMiddleware(stripe.ServeMembershipPage))

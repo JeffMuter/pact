@@ -22,9 +22,9 @@
 			{{ end }}
 		</div>
 		{{ if .Data.Rewards }}
-		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-			{{ range .Data.Rewards }}
-			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col justify-between">
+		<ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-section="rewards">
+			{{ range $index, $reward := .Data.Rewards }}
+			<li class="p-4 border rounded border-emerald-400 bg-black flex flex-col justify-between{{ if ge $index 5 }} hidden collapsed-item{{ end }}">
 				<div>
 					<div class="flex justify-between items-start">
 						<h4 class="text-lg font-semibold text-white">{{ .Title }}</h4>
@@ -56,6 +56,12 @@
 						{{ template "secondaryButton" (dict "Text" "Purchase" "HtxPost" (printf "/reward/purchase/%d" .TaskID) "HtxTarget" "#rewards-content" "HtxSwap" "outerHTML" "HtxConfirm" (printf "Purchase this reward for %d points?" .PointCost.Int64) "Class" "btn-sm" "Disabled" (not $canAfford)) }}
 					{{ end }}
 				</div>
+			</li>
+			{{ end }}
+			{{ if gt .Data.RewardsOverflow 0 }}
+			<li class="p-4 border rounded border-emerald-400 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card flex flex-col justify-center items-center" onclick="toggleSection('rewards')">
+				<h4 class="text-lg font-semibold text-gray-400">...</h4>
+				<p class="text-sm text-gray-400">{{ .Data.RewardsOverflow }} more card{{ if gt .Data.RewardsOverflow 1 }}s{{ end }}</p>
 			</li>
 			{{ end }}
 		</ul>
@@ -224,6 +230,22 @@
 				} else {
 					durationField.classList.add('hidden');
 				}
+			}
+		}
+
+		function toggleSection(sectionName) {
+			const list = document.querySelector('[data-section="' + sectionName + '"]');
+			if (!list) return;
+			
+			const collapsedItems = list.querySelectorAll('.collapsed-item');
+			const expansionCard = list.querySelector('.expansion-card');
+			
+			collapsedItems.forEach(function(item) {
+				item.classList.toggle('hidden');
+			});
+			
+			if (expansionCard) {
+				expansionCard.style.display = 'none';
 			}
 		}
 	</script>

@@ -218,6 +218,22 @@ func (q *Queries) CreateSubmission(ctx context.Context, arg CreateSubmissionPara
 	return submission_id, err
 }
 
+const createSupportTicket = `-- name: CreateSupportTicket :exec
+INSERT INTO support_tickets (user_id, email, issue_description)
+VALUES (?, ?, ?)
+`
+
+type CreateSupportTicketParams struct {
+	UserID           int64
+	Email            string
+	IssueDescription string
+}
+
+func (q *Queries) CreateSupportTicket(ctx context.Context, arg CreateSupportTicketParams) error {
+	_, err := q.db.ExecContext(ctx, createSupportTicket, arg.UserID, arg.Email, arg.IssueDescription)
+	return err
+}
+
 const createTask = `-- name: CreateTask :one
 
 INSERT INTO tasks (
@@ -1546,6 +1562,42 @@ func (q *Queries) GetSubmissionWithTask(ctx context.Context, assignedTaskID int6
 		&i.Description,
 	)
 	return i, err
+}
+
+const getSupportTicketsByUserId = `-- name: GetSupportTicketsByUserId :many
+SELECT ticket_id, user_id, email, issue_description, created_at
+FROM support_tickets
+WHERE user_id = ?
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetSupportTicketsByUserId(ctx context.Context, userID int64) ([]SupportTicket, error) {
+	rows, err := q.db.QueryContext(ctx, getSupportTicketsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SupportTicket
+	for rows.Next() {
+		var i SupportTicket
+		if err := rows.Scan(
+			&i.TicketID,
+			&i.UserID,
+			&i.Email,
+			&i.IssueDescription,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getTaskById = `-- name: GetTaskById :one

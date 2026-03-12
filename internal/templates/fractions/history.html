@@ -14,17 +14,25 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 		<!-- Completed -->
 		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
 			<h3 class="text-2xl font-bold text-emerald-400 mb-4">Completed</h3>
 			{{ if .Data.CompletedTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.CompletedTasks }}
-				<li class="p-4 border rounded border-gray-600 bg-black">
+			<ul class="space-y-3" data-section="completed-tasks">
+				{{ range $index, $task := .Data.CompletedTasks }}
+				<li class="p-4 border rounded border-gray-600 bg-black{{ if ge $index 5 }} hidden collapsed-item{{ end }}">
 					<div class="flex justify-between items-start">
 						<h4 class="text-lg text-gray-300">{{ .Title }}</h4>
 						<span class="text-emerald-400 font-bold shrink-0 ml-4">+{{ .Points }}</span>
+					</div>
+				</li>
+				{{ end }}
+				{{ if gt .Data.CompletedOverflow 0 }}
+				<li class="p-4 border rounded border-gray-600 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card" onclick="toggleSection('completed-tasks')">
+					<div class="flex justify-between items-center">
+						<h4 class="text-lg font-semibold text-gray-400">...</h4>
+						<p class="text-sm text-gray-400">{{ .Data.CompletedOverflow }} more card{{ if gt .Data.CompletedOverflow 1 }}s{{ end }}</p>
 					</div>
 				</li>
 				{{ end }}
@@ -38,12 +46,20 @@
 		<section class="p-6 border border-emerald-400 rounded-lg bg-gray-900">
 			<h3 class="text-2xl font-bold text-emerald-400 mb-4">Failed</h3>
 			{{ if .Data.FailedTasks }}
-			<ul class="space-y-3">
-				{{ range .Data.FailedTasks }}
-				<li class="p-4 border rounded border-red-600 bg-black">
+			<ul class="space-y-3" data-section="failed-tasks">
+				{{ range $index, $task := .Data.FailedTasks }}
+				<li class="p-4 border rounded border-red-600 bg-black{{ if ge $index 5 }} hidden collapsed-item{{ end }}">
 					<div class="flex justify-between items-start">
 						<h4 class="text-lg text-gray-300">{{ .Title }}</h4>
 						<span class="text-red-400 font-bold shrink-0 ml-4">{{ .Points }} pts</span>
+					</div>
+				</li>
+				{{ end }}
+				{{ if gt .Data.FailedOverflow 0 }}
+				<li class="p-4 border rounded border-red-600 bg-black hover:bg-gray-800 transition-colors cursor-pointer expansion-card" onclick="toggleSection('failed-tasks')">
+					<div class="flex justify-between items-center">
+						<h4 class="text-lg font-semibold text-gray-400">...</h4>
+						<p class="text-sm text-gray-400">{{ .Data.FailedOverflow }} more card{{ if gt .Data.FailedOverflow 1 }}s{{ end }}</p>
 					</div>
 				</li>
 				{{ end }}
@@ -53,6 +69,24 @@
 			{{ end }}
 		</section>
 	</div>
+
+	<script>
+		function toggleSection(sectionName) {
+			const list = document.querySelector('[data-section="' + sectionName + '"]');
+			if (!list) return;
+			
+			const collapsedItems = list.querySelectorAll('.collapsed-item');
+			const expansionCard = list.querySelector('.expansion-card');
+			
+			collapsedItems.forEach(function(item) {
+				item.classList.toggle('hidden');
+			});
+			
+			if (expansionCard) {
+				expansionCard.style.display = 'none';
+			}
+		}
+	</script>
 
 	{{ end }}
 </div>

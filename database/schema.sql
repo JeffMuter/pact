@@ -1,5 +1,6 @@
 -- use this to override existing tables, keep in mind, data will poof
 DROP TABLE IF EXISTS test;
+DROP TABLE IF EXISTS support_tickets;
 DROP TABLE IF EXISTS task_submissions;
 DROP TABLE IF EXISTS assigned_tasks;
 DROP TABLE IF EXISTS tasks;
@@ -149,9 +150,20 @@ CREATE TABLE task_submissions (
     FOREIGN KEY (assigned_task_id) REFERENCES assigned_tasks(assigned_task_id)
 );
 
+-- Support tickets: User-submitted support requests
+CREATE TABLE support_tickets (
+    ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    issue_description TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
 -- Performance indexes for common query patterns
 CREATE INDEX idx_assigned_tasks_connection_status ON assigned_tasks(connection_id, status);
 CREATE INDEX idx_assigned_tasks_worker_status ON assigned_tasks(worker_id, status);
 CREATE INDEX idx_connection_requests_receiver_active ON connection_requests(receiver_id, is_active);
 CREATE INDEX idx_tasks_manager_type ON tasks(manager_id, type);
 CREATE INDEX idx_tasks_repeat ON tasks(repeat_frequency, last_assigned_at) WHERE repeat_connection_id IS NOT NULL;
+CREATE INDEX idx_support_tickets_user ON support_tickets(user_id);

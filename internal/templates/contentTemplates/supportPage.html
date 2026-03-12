@@ -1,0 +1,52 @@
+{{ define "content" }}
+
+<div class="container mx-auto max-w-2xl px-4 py-8">
+	<div class="card bg-gray-800 shadow-xl border border-emerald-600">
+		<div class="card-body">
+			<h2 class="card-title text-2xl text-emerald-600 mb-4">Contact Support</h2>
+			
+			<div class="alert alert-info mb-6 py-3">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+				<span>Please describe your issue below. We'll respond to you via email as soon as possible.</span>
+			</div>
+
+			<form hx-post="/support/submit" hx-swap="beforeend" hx-target="#response-container">
+				<div class="form-control w-full mb-4">
+					<label class="label">
+						<span class="label-text text-emerald-600">Email</span>
+					</label>
+					<input 
+						type="email" 
+						name="email" 
+						value="{{ .Data.Email }}" 
+						placeholder="your.email@example.com" 
+						class="input input-bordered w-full bg-gray-900 text-white border-emerald-600 focus:border-emerald-400" 
+						required
+					/>
+				</div>
+
+				<div class="form-control w-full mb-6">
+					<label class="label">
+						<span class="label-text text-emerald-600">Issue Description</span>
+					</label>
+					<textarea 
+						name="issue_description" 
+						placeholder="Please describe the issue you're experiencing..." 
+						class="textarea textarea-bordered h-32 bg-gray-900 text-white border-emerald-600 focus:border-emerald-400" 
+						required
+					></textarea>
+				</div>
+
+				<div class="card-actions justify-end">
+					<button type="submit" class="btn bg-emerald-600 hover:bg-emerald-700 text-white border-none">
+						Submit Ticket
+					</button>
+				</div>
+			</form>
+
+			<div id="response-container" class="mt-4"></div>
+		</div>
+	</div>
+</div>
+
+{{ end }}

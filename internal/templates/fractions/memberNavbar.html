@@ -2,7 +2,7 @@
 
 <nav class="navbar flex justify-between bg-gray-900 text-emerald-600">
 	<h2>Pact - {{ .Data.Username }}</h2>
-	<div class="justify-end gap-4 ">
+	<div class="flex justify-end gap-4">
 		{{ if .Data.UserRole }}
 		<span class="text-emerald-600">
 			{{ if eq .Data.UserRole "worker" }}Worker: {{ end }}{{ .Data.WorkerPoints }} points
@@ -20,13 +20,33 @@
 			href="/history" hx-get="/history" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
 			History
 		</a>
-		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400"
-			href="/account" hx-get="/account" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true">
-			Account
-		</a>
-		<a class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400" href="/logout">
-			Logout
-		</a>
+		<div class="dropdown dropdown-hover dropdown-end dropdown-bottom">
+			<div tabindex="0" role="button" class="btn btn-ghost hover:bg-black rounded duration-300 hover:border-emerald-400">
+				Account
+			</div>
+			<ul tabindex="0" class="dropdown-content menu bg-gray-800 text-emerald-600 rounded-box z-10 w-52 p-2 shadow border border-emerald-600">
+				<li>
+					<a href="/account" hx-get="/account" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true" class="hover:bg-gray-700">
+						Settings
+					</a>
+				</li>
+				<li>
+					<a href="/support" hx-get="/support" hx-target="#mainElement" hx-swap="innerHTML" hx-push-url="true" class="hover:bg-gray-700">
+						Support
+					</a>
+				</li>
+				<li>
+					<a href="/membership" class="hover:bg-gray-700">
+						Membership
+					</a>
+				</li>
+				<li>
+					<a href="/logout" class="hover:bg-gray-700">
+						Logout
+					</a>
+				</li>
+			</ul>
+		</div>
 	</div>
 </nav>
 

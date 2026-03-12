@@ -90,18 +90,40 @@ func BuildBucketsData(r *http.Request) BucketsData {
 	completedTasks, _ := getTasksByStatus(r.Context(), connectionId, "completed")
 	failedTasks, _ := getTasksByStatus(r.Context(), connectionId, "failed")
 
+	// Calculate overflow counts
+	todoOverflow := 0
+	if len(todoTasks) > 5 {
+		todoOverflow = len(todoTasks) - 5
+	}
+	reviewOverflow := 0
+	if len(reviewTasks) > 5 {
+		reviewOverflow = len(reviewTasks) - 5
+	}
+	completedOverflow := 0
+	if len(completedTasks) > 5 {
+		completedOverflow = len(completedTasks) - 5
+	}
+	failedOverflow := 0
+	if len(failedTasks) > 5 {
+		failedOverflow = len(failedTasks) - 5
+	}
+
 	data := BucketsData{
 		Data: map[string]any{
-			"Title":          "Buckets",
-			"Role":           role,
-			"ConnectionId":   conn.ConnectionID,
-			"WorkerPoints":   conn.WorkerPoints,
-			"ManagerUsername": conn.ManagerUsername,
-			"WorkerUsername":  conn.WorkerUsername,
-			"TodoTasks":      todoTasks,
-			"ReviewTasks":    reviewTasks,
-			"CompletedTasks": completedTasks,
-			"FailedTasks":    failedTasks,
+			"Title":             "Buckets",
+			"Role":              role,
+			"ConnectionId":      conn.ConnectionID,
+			"WorkerPoints":      conn.WorkerPoints,
+			"ManagerUsername":   conn.ManagerUsername,
+			"WorkerUsername":    conn.WorkerUsername,
+			"TodoTasks":         todoTasks,
+			"ReviewTasks":       reviewTasks,
+			"CompletedTasks":    completedTasks,
+			"FailedTasks":       failedTasks,
+			"TodoOverflow":      todoOverflow,
+			"ReviewOverflow":    reviewOverflow,
+			"CompletedOverflow": completedOverflow,
+			"FailedOverflow":    failedOverflow,
 		},
 	}
 
@@ -109,6 +131,11 @@ func BuildBucketsData(r *http.Request) BucketsData {
 		rewards, err := getRewardsForConnection(r.Context(), connectionId)
 		if err == nil {
 			data.Data["Rewards"] = rewards
+			rewardsOverflow := 0
+			if len(rewards) > 5 {
+				rewardsOverflow = len(rewards) - 5
+			}
+			data.Data["RewardsOverflow"] = rewardsOverflow
 		}
 	}
 
@@ -116,10 +143,20 @@ func BuildBucketsData(r *http.Request) BucketsData {
 		rewards, err := getRewardsForConnection(r.Context(), connectionId)
 		if err == nil {
 			data.Data["Rewards"] = rewards
+			rewardsOverflow := 0
+			if len(rewards) > 5 {
+				rewardsOverflow = len(rewards) - 5
+			}
+			data.Data["RewardsOverflow"] = rewardsOverflow
 		}
 		saved, err := getBookmarkedTasks(r.Context(), int64(userId))
 		if err == nil {
 			data.Data["SavedTasks"] = saved
+			savedOverflow := 0
+			if len(saved) > 5 {
+				savedOverflow = len(saved) - 5
+			}
+			data.Data["SavedOverflow"] = savedOverflow
 		}
 	}
 
